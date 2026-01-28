@@ -4,6 +4,9 @@ export const authConfig = {
     pages: {
         signIn: "/login",
     },
+    // Автоматически определяет URL из заголовков запроса
+    // Это позволяет не задавать NEXTAUTH_URL при деплое
+    trustHost: true,
     callbacks: {
         authorized({ auth, request: { nextUrl } }) {
             const isLoggedIn = !!auth?.user;
