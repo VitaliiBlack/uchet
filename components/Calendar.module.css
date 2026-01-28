@@ -1,0 +1,701 @@
+.calendar-container {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.nav-group {
+  display: flex;
+  gap: 8px;
+}
+
+.monthly-summary {
+  display: flex;
+  gap: 15px;
+  background-color: #fff;
+  padding: 8px 15px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.nav-button {
+  padding: 8px 16px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.nav-button:hover {
+  background-color: #3a7bc8;
+}
+
+.month-year {
+  font-size: 1.5rem;
+  color: #333;
+  margin: 0;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.calendar-day-header {
+  background-color: #f0f0f0;
+  padding: 10px;
+  text-align: center;
+  font-weight: bold;
+  color: #555;
+}
+
+.calendar-day {
+  background-color: white;
+  padding: 10px;
+  min-height: 140px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-day:hover {
+  background-color: #f0f8ff;
+}
+
+.calendar-day.selected {
+  background-color: #e6f2ff;
+  border: 2px solid #4a90e2;
+}
+
+.calendar-day.today {
+  background-color: #fff9e6;
+  border: 1px solid #ffcc00;
+}
+
+.calendar-day.today:hover {
+  background-color: #fff3cc;
+}
+
+.calendar-day.today .day-number {
+  color: #cc9900;
+}
+
+.calendar-day.empty {
+  background-color: #f9f9f9;
+  cursor: default;
+}
+
+.day-number {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.daily-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+
+.financial-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background-color: #f8f8f8;
+}
+
+.financial-item.income {
+  color: #2ecc71;
+}
+
+.financial-item.expense {
+  color: #e74c3c;
+}
+
+.financial-item.profit {
+  color: #3498db;
+  font-weight: bold;
+}
+
+.label {
+  font-weight: bold;
+  margin-right: 4px;
+  font-size: 1.1em;
+  color: inherit;
+}
+
+.operations-preview {
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.operation-preview {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  padding: 2px 4px;
+  margin-bottom: 2px;
+  background-color: #f0f0f0;
+  border-radius: 2px;
+}
+
+.positive {
+  color: #2ecc71;
+}
+
+.negative {
+  color: #e74c3c;
+}
+
+.more-indicator {
+  font-size: 0.75rem;
+  color: #888;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.op-desc {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70%;
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 40px;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.financial-section {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.financial-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.financial-section-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.daily-totals {
+  display: flex;
+  gap: 20px;
+  font-size: 1rem;
+}
+
+.total-income {
+  color: #2ecc71;
+  font-weight: bold;
+}
+
+.total-expense {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+.total-profit {
+  color: #3498db;
+  font-weight: bold;
+}
+
+.add-operation-form {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.add-operation-form h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #555;
+}
+
+.form-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.form-row input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  flex: 1;
+}
+
+.save-button {
+  padding: 8px 16px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.save-button:hover {
+  background-color: #2980b9;
+}
+
+.cancel-button {
+  padding: 8px 16px;
+  background-color: #95a5a6;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+  margin-left: 5px;
+}
+
+.cancel-button:hover {
+  background-color: #7f8c8d;
+}
+
+.edit-button {
+  padding: 5px 10px;
+  background-color: #f39c12;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+  margin-right: 5px;
+}
+
+.edit-button:hover {
+  background-color: #d68910;
+}
+
+.delete-button {
+  padding: 5px 10px;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+}
+
+.delete-button:hover {
+  background-color: #c0392b;
+}
+
+.delete-icon-button {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+}
+
+.delete-icon-button:hover {
+  background-color: #fee2e2;
+  color: #c0392b;
+  opacity: 1;
+}
+
+.operations-list {
+  margin-top: 20px;
+}
+
+.operations-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.operations-table th,
+.operations-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.operations-table th {
+  background-color: #f0f0f0;
+  font-weight: bold;
+  color: #555;
+}
+
+.operations-table tr:hover {
+  background-color: #f5f5f5;
+}
+
+.operations-table .editable-input,
+.operations-table .new-input {
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.no-operations {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  padding: 20px;
+}
+
+/* Стили для редактируемых полей в таблице */
+.editable-input {
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 1rem;
+  background-color: #fff;
+  transition: border-color 0.3s;
+}
+
+.editable-input:focus {
+  border-color: #4a90e2;
+  outline: none;
+}
+
+.new-input {
+  padding: 6px;
+  border: 1px dashed #aaa;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 1rem;
+  background-color: #f9f9f9;
+}
+
+.new-input:focus {
+  border-color: #4a90e2;
+  outline: none;
+  background-color: #fff;
+}
+
+/* Убираем стрелки у number input */
+.editable-input[type="number"]::-webkit-inner-spin-button,
+.editable-input[type="number"]::-webkit-outer-spin-button,
+.new-input[type="number"]::-webkit-inner-spin-button,
+.new-input[type="number"]::-webkit-outer-spin-button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.editable-input[type="number"],
+.new-input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+/* Мобильная адаптация - современный чистый дизайн */
+@media (max-width: 768px) {
+  .calendar-container {
+    padding: 12px;
+    max-width: 100%;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  }
+
+  .calendar-header {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eaeaea;
+  }
+
+  .nav-button {
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 1rem;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    font-weight: 600;
+    transition: background-color 0.2s;
+  }
+
+  .nav-button:hover {
+    background-color: #3a7bc8;
+  }
+
+  .month-year {
+    font-size: 1.3rem;
+    color: #333;
+    font-weight: 600;
+  }
+
+  .calendar-grid {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background-color: #e0e0e0;
+  }
+
+  .calendar-day {
+    min-height: 100px;
+    padding: 8px;
+    background-color: #fff;
+    border-radius: 4px;
+  }
+
+  .day-number {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 6px;
+  }
+
+  .financial-item {
+    font-size: 0.75rem;
+    padding: 3px 5px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+  }
+
+  .operations-preview {
+    display: none;
+    /* скрываем превью на мобильных для экономии места */
+  }
+
+  .financial-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eaeaea;
+  }
+
+  .financial-section-header h1 {
+    font-size: 1.5rem;
+    color: #333;
+    margin: 0;
+  }
+
+  .daily-totals {
+    flex-direction: column;
+    gap: 8px;
+    font-size: 1rem;
+    width: 100%;
+  }
+
+  .total-income,
+  .total-expense,
+  .total-profit {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    font-weight: 600;
+  }
+
+  .total-income {
+    color: #2ecc71;
+    border-left: 4px solid #2ecc71;
+  }
+
+  .total-expense {
+    color: #e74c3c;
+    border-left: 4px solid #e74c3c;
+  }
+
+  .total-profit {
+    color: #3498db;
+    border-left: 4px solid #3498db;
+  }
+
+  /* Таблица операций: улучшенная мобильная версия */
+  .operations-list {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+    border: 1px solid #eaeaea;
+    background-color: #fff;
+  }
+
+  .operations-table {
+    width: 100%;
+    min-width: unset;
+    table-layout: fixed;
+    border-collapse: collapse;
+  }
+
+  .operations-table th,
+  .operations-table td {
+    padding: 12px 8px;
+    font-size: 0.9rem;
+    text-align: left;
+    border-bottom: 1px solid #eaeaea;
+  }
+
+  .operations-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #555;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  .operations-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .editable-input {
+    padding: 10px 8px;
+    font-size: 16px;
+    min-height: 40px;
+    box-sizing: border-box;
+    touch-action: manipulation;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    width: 100%;
+    background-color: #fff;
+    transition: border-color 0.2s;
+  }
+
+  .editable-input:focus {
+    border-color: #4a90e2;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+  }
+
+  /* Убираем горизонтальную прокрутку внутри таблицы, если не требуется */
+  .operations-list::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .operations-list::-webkit-scrollbar-thumb {
+    background-color: #c1c1c1;
+    border-radius: 3px;
+  }
+}
+
+/* Для очень маленьких экранов (до 480px) */
+@media (max-width: 480px) {
+  .calendar-container {
+    padding: 8px;
+    border-radius: 10px;
+  }
+
+  .calendar-header {
+    gap: 8px;
+  }
+
+  .nav-button {
+    padding: 9px 14px;
+    font-size: 0.95rem;
+  }
+
+  .month-year {
+    font-size: 1.2rem;
+  }
+
+  .calendar-grid {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0;
+  }
+
+  .calendar-day {
+    min-height: 70px;
+    padding: 4px;
+  }
+
+  .day-number {
+    font-size: 0.85rem;
+  }
+
+  .financial-item {
+    font-size: 0.65rem;
+  }
+
+  .financial-section-header h1 {
+    font-size: 1.3rem;
+  }
+
+  .daily-totals {
+    font-size: 0.95rem;
+  }
+
+  .operations-table th,
+  .operations-table td {
+    padding: 10px 6px;
+    font-size: 0.85rem;
+  }
+
+  .editable-input {
+    padding: 9px 7px;
+    min-height: 38px;
+    font-size: 15px;
+  }
+
+  /* Скрываем заголовок "Прибыль" на очень маленьких экранах? */
+  /* .operations-table th:nth-child(4),
+  .operations-table td:nth-child(4) {
+    display: none;
+  } */
+}
