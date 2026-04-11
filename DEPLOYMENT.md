@@ -1,86 +1,70 @@
-# Инструкция по деплою
+# Деплой Uchet
 
-## Переменные окружения для production
+## Важное ограничение
 
-### Обязательные переменные:
+Проект работает в production, а реальные данные существуют только в `PostgreSQL`.
+
+Перед любым релизом:
+
+- не выполнять destructive SQL;
+- не запускать `lib/initDb.ts` против production;
+- не делать schema/data changes без отдельного утверждённого плана;
+- не хранить реальные секреты в репозитории.
+
+## Production env
+
+Укажите реальные значения только в настройках платформы деплоя.
 
 ```bash
-# База данных (уже настроена)
-DATABASE_URL="postgresql://neondb_owner:npg_3e6ENvJFtCSH@ep-flat-boat-agun6hjz-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require"
-
-# NextAuth Secret (ОБЯЗАТЕЛЬНО!)
-NEXTAUTH_SECRET="DbN/wuRyCr1rc6faKOnaHY/HWx2eZXQhKPPKbEg+mKA="
+DATABASE_URL="postgresql://user:password@host:5432/database?sslmode=require"
+NEXTAUTH_SECRET="replace-with-a-secure-random-value"
 ```
 
-### NEXTAUTH_URL — НЕ ОБЯЗАТЕЛЬНА! ✅
+Опционально:
 
-Благодаря настройке `trustHost: true` в `auth.config.ts`, NextAuth автоматически определит URL из заголовков запроса.
-
-**Однако**, если хотите задать явно:
-
-#### Для Vercel:
 ```bash
-# Вариант 1: Не задавать вообще (рекомендуется)
-# NextAuth автоматически использует VERCEL_URL
-
-# Вариант 2: Задать после первого деплоя
-NEXTAUTH_URL=https://your-project.vercel.app
+NEXTAUTH_URL="https://your-domain.example"
 ```
 
-#### Для других платформ (Railway, Render, DigitalOcean):
-```bash
-# Вариант 1: Использовать кастомный домен (если есть)
-NEXTAUTH_URL=https://yourdomain.com
+## Деплой-чеклист
 
-# Вариант 2: Задать после первого деплоя
-NEXTAUTH_URL=https://your-app.railway.app
-# или
-NEXTAUTH_URL=https://your-app.onrender.com
-```
+1. Убедиться, что `yarn lint` проходит.
+2. Убедиться, что `yarn build` проходит.
+3. Проверить, что в diff нет секретов, connection string и деструктивных SQL.
+4. Проверить env на платформе деплоя.
+5. Выполнить деплой.
+6. После деплоя вручную проверить:
+   - `/login`
+   - `/`
+   - `/day/[date]`
+   - CRUD операций
+   - мобильный month view
 
-## Процесс деплоя
+## Секреты
 
-### Шаг 1: Подготовка
-1. Убедитесь, что все изменения закоммичены в git
-2. Проверьте, что `.env` добавлен в `.gitignore` (секреты не должны попасть в репозиторий!)
+Если секреты или connection strings когда-либо попали в репозиторий, их нужно:
 
-### Шаг 2: Первый деплой
-1. Создайте проект на платформе (Vercel/Railway/Render)
-2. Подключите GitHub репозиторий
-3. Задайте переменные окружения:
-   - `DATABASE_URL` — ваша база данных Neon
-   - `NEXTAUTH_SECRET` — секрет для NextAuth
-   - `NEXTAUTH_URL` — **можно пропустить** благодаря `trustHost: true`
+1. Считать скомпрометированными.
+2. Ротировать вне кода.
+3. Обновить значения на production-платформе.
 
-### Шаг 3: После деплоя (опционально)
-Если NextAuth не работает корректно:
-1. Получите URL вашего приложения
-2. Добавьте переменную `NEXTAUTH_URL=https://your-actual-url.com`
-3. Перезапустите приложение
-
-## Генерация нового NEXTAUTH_SECRET (если нужно)
+## Генерация нового NEXTAUTH_SECRET
 
 ```bash
-# В терминале выполните:
 openssl rand -base64 32
 ```
 
-Скопируйте результат и используйте как значение `NEXTAUTH_SECRET`.
-
-## Проверка после деплоя
-
-1. Откройте ваше приложение в браузере
-2. Попробуйте войти через `/login`
-3. Проверьте, что редиректы работают корректно
-4. Убедитесь, что сессия сохраняется после перезагрузки страницы
-
 ## Troubleshooting
 
-### Проблема: "Invalid callback URL"
-**Решение**: Добавьте `NEXTAUTH_URL` явно в переменные окружения
+### Invalid callback URL
 
-### Проблема: "CSRF token mismatch"
-**Решение**: Проверьте, что `NEXTAUTH_SECRET` одинаковый во всех окружениях
+- Явно задайте `NEXTAUTH_URL`.
 
-### Проблема: Редиректы не работают
-**Решение**: Убедитесь, что `trustHost: true` добавлен в `auth.config.ts`
+### CSRF token mismatch
+
+- Проверьте, что `NEXTAUTH_SECRET` одинаковый на всех инстансах окружения.
+
+### Проблемы с авторизацией после релиза
+
+- Проверьте `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`.
+- Убедитесь, что не запускались сторонние init/migration-скрипты против production.

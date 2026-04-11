@@ -1,39 +1,40 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import styles from './Calendar.module.css';
 import { FinancialOperation } from '@/lib/types';
+import { getTodayDateKey, normalizeDateKey } from '@/lib/date';
+import AppMenu from './AppMenu';
+
+const fetchCalendarOperations = async (): Promise<FinancialOperation[]> => {
+  const response = await fetch('/api/financial-data', {
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch');
+  }
+
+  return response.json();
+};
 
 const Calendar: React.FC = () => {
   const router = useRouter();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [operations, setOperations] = useState<FinancialOperation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch all operations on mount
-  useEffect(() => {
-    const fetchOperations = async () => {
-      try {
-        const response = await fetch('/api/financial-data');
-        if (!response.ok) throw new Error('Failed to fetch');
-        const data = await response.json();
-        setOperations(data);
-      } catch (err) {
-        console.error('Error fetching financial data:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchOperations();
-  }, []);
+  const todayDateKey = getTodayDateKey();
+  const monthTitle = currentDate.toLocaleString('ru-RU', { month: 'long' });
+  const { data: operations = [], isLoading } = useQuery({
+    queryKey: ['calendar-operations'],
+    queryFn: fetchCalendarOperations,
+  });
 
   // Pre-process operations into a map for O(1) daily lookup
   const operationsByDate = useMemo(() => {
     const map: Record<string, FinancialOperation[]> = {};
     operations.forEach(op => {
-      // op.date comes as ISO or similar, convert to YYYY-MM-DD
-      const dateKey = new Date(op.date).toLocaleDateString('en-CA');
+      const dateKey = normalizeDateKey(op.date);
       if (!map[dateKey]) map[dateKey] = [];
       map[dateKey].push(op);
     });
@@ -137,47 +138,66 @@ const Calendar: React.FC = () => {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const dayOps = operationsByDate[dateStr] || [];
       const totals = dailyTotals[dateStr] || { totalIncome: 0, totalExpense: 0, totalProfit: 0 };
-      const isToday = new Date().toLocaleDateString('en-CA') === dateStr;
+      const isToday = todayDateKey === dateStr;
+      const hasOperations = dayOps.length > 0;
 
       days.push(
         <div
           key={`day-${day}`}
           className={`${styles['calendar-day']} ${isToday ? styles.today : ''}`}
-          onClick={() => router.push('/day/' + dateStr)}
         >
-          <div className={styles['day-number']}>{day}</div>
-          <div className={styles['daily-summary']}>
-            {totals.totalIncome > 0 && (
-              <div className={`${styles['financial-item']} ${styles.income}`}>
-                <span className={styles.label}>+</span> {totals.totalIncome}
-              </div>
-            )}
-            {totals.totalExpense > 0 && (
-              <div className={`${styles['financial-item']} ${styles.expense}`}>
-                <span className={styles.label}>-</span> {totals.totalExpense}
-              </div>
-            )}
-            {(totals.totalIncome > 0 || totals.totalExpense > 0) && (
-              <div className={`${styles['financial-item']} ${styles.profit}`}>
-                <span className={styles.label}>∑</span> {totals.totalProfit}
+          <button
+            type="button"
+            className={styles['day-hitbox']}
+            aria-label={`Открыть день ${dateStr}`}
+            onClick={() => router.push('/day/' + dateStr)}
+          />
+          <div className={styles['day-content']}>
+            <div className={styles['day-header']}>
+              <div className={styles['day-number']}>{day}</div>
+            </div>
+            <div className={styles['daily-summary']} data-has-ops={hasOperations}>
+              {totals.totalIncome > 0 && (
+                <div className={`${styles['financial-item']} ${styles.income}`}>
+                  <span className={styles.label}>+</span>
+                  <span className={styles['item-value']}>{totals.totalIncome}</span>
+                </div>
+              )}
+              {totals.totalExpense > 0 && (
+                <div className={`${styles['financial-item']} ${styles.expense}`}>
+                  <span className={styles.label}>-</span>
+                  <span className={styles['item-value']}>{totals.totalExpense}</span>
+                </div>
+              )}
+              {(totals.totalIncome > 0 || totals.totalExpense > 0) && (
+                <div className={`${styles['financial-item']} ${styles.profit} ${styles['desktop-profit-item']}`}>
+                  <span className={styles.label}>∑</span>
+                  <span className={styles['item-value']}>{totals.totalProfit}</span>
+                </div>
+              )}
+              {hasOperations && (
+                <div className={`${styles['financial-item']} ${styles['mobile-count-item']}`}>
+                  <span className={styles.label}>+</span>
+                  <span className={styles['item-value']}>{dayOps.length} зап.</span>
+                </div>
+              )}
+            </div>
+            {hasOperations && (
+              <div className={styles['operations-preview']}>
+                {dayOps.slice(0, 2).map(op => (
+                  <div key={op.id} className={styles['operation-preview']}>
+                    <span className={styles['op-desc']}>{op.description || '...'}</span>
+                    <span className={op.profit >= 0 ? styles.positive : styles.negative}>
+                      {op.profit}
+                    </span>
+                  </div>
+                ))}
+                {dayOps.length > 2 && (
+                  <div className={styles['more-indicator']}>+{dayOps.length - 2} ещё</div>
+                )}
               </div>
             )}
           </div>
-          {dayOps.length > 0 && (
-            <div className={styles['operations-preview']}>
-              {dayOps.slice(0, 2).map(op => (
-                <div key={op.id} className={styles['operation-preview']}>
-                  <span className={styles['op-desc']}>{op.description || '...'}</span>
-                  <span className={op.profit >= 0 ? styles.positive : styles.negative}>
-                    {op.profit}
-                  </span>
-                </div>
-              ))}
-              {dayOps.length > 2 && (
-                <div className={styles['more-indicator']}>+{dayOps.length - 2} ещё</div>
-              )}
-            </div>
-          )}
         </div>
       );
     }
@@ -187,21 +207,38 @@ const Calendar: React.FC = () => {
 
   return (
     <div className={styles['calendar-container']}>
-      <div className={styles['calendar-header']}>
-        <div className={styles['nav-group']}>
-          <button className={styles['nav-button']} onClick={prevMonth}>
-            «
+      <div className={styles['calendar-shell-bar']}>
+        <div className={styles['calendar-year-pill']}>{currentDate.getFullYear()}</div>
+        <div className={styles['calendar-shell-actions']}>
+          <button type="button" className={styles['today-pill']} onClick={goToToday}>
+            Today
           </button>
-          <button className={styles['nav-button']} onClick={goToToday}>
-            Сегодня
-          </button>
-          <button className={styles['nav-button']} onClick={nextMonth}>
-            »
-          </button>
+          <AppMenu buttonClassName={styles['menu-trigger']} />
         </div>
-        <h2 className={styles['month-year']}>
-          {currentDate.toLocaleString('ru-RU', { month: 'long', year: 'numeric' })}
-        </h2>
+      </div>
+
+      <div className={styles['calendar-header']}>
+        <div className={styles['month-row']}>
+          <h2 className={styles['month-year']}>{monthTitle}</h2>
+          <div className={styles['nav-group']}>
+            <button
+              type="button"
+              className={styles['nav-button']}
+              onClick={prevMonth}
+              aria-label="Предыдущий месяц"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              className={styles['nav-button']}
+              onClick={nextMonth}
+              aria-label="Следующий месяц"
+            >
+              ›
+            </button>
+          </div>
+        </div>
         <div className={styles['monthly-summary']}>
           <div className={`${styles['summary-item']} ${styles.income}`}>
             <span className={styles.label}>+</span> {monthlyTotals.totalIncome}

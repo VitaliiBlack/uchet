@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Uchet
 
-## Getting Started
+Веб-приложение для учёта финансов на `Next.js App Router` с авторизацией через `NextAuth` и хранением данных в `PostgreSQL`.
 
-First, run the development server:
+## Что внутри
+
+- Месячный календарь с суммами по дням.
+- Страница дня с CRUD-редактированием операций.
+- Email/password аутентификация.
+- Серверные API routes для чтения и изменения операций.
+
+## Стек
+
+- `Next.js 16`
+- `React 19`
+- `next-auth@5 beta`
+- `pg`
+- `TypeScript`
+- `Tailwind CSS 4` + CSS modules
+
+## Переменные окружения
+
+Создайте `.env.local` на основе `.env.example`.
+
+Обязательные переменные:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+DATABASE_URL="postgresql://user:password@host:5432/database?sslmode=require"
+NEXTAUTH_SECRET="replace-with-a-secure-random-value"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Опционально для локальной разработки:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+NEXTAUTH_URL="http://localhost:3000"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Локальный запуск
 
-## Learn More
+```bash
+yarn install
+yarn dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Приложение будет доступно на [http://localhost:3000](http://localhost:3000).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Основные маршруты
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `/` — календарь по месяцам
+- `/day/[date]` — операции за конкретный день
+- `/login` — вход и регистрация
+- `/api/financial-data` — защищённый CRUD API для операций
+- `/api/auth/[...nextauth]` — auth routes NextAuth
 
-## Deploy on Vercel
+## Формат даты
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+В UI и навигации используется строковый формат `YYYY-MM-DD`.  
+Это сделано намеренно, чтобы не допускать timezone-сдвигов при отображении `DATE` из PostgreSQL.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Работа с базой
+
+В production реальные данные существуют только в базе.
+
+Критичные правила:
+
+- не выполнять ручные schema/data changes без отдельного утверждённого плана;
+- не использовать `lib/initDb.ts` как миграционный инструмент;
+- не запускать `initDb` против production базы.
+
+`lib/initDb.ts` оставлен только как безопасный additive bootstrap для локального/dev-окружения.  
+Он не должен использоваться вместо нормальных миграций.
+
+## Проверки перед релизом
+
+```bash
+yarn lint
+yarn build
+```
+
+## Деплой
+
+См. [DEPLOYMENT.md](/Users/vitalijgribinik/HomeProjects/uchet/DEPLOYMENT.md).

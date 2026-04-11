@@ -1,8 +1,8 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import pool from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { authConfig } from "@/auth.config";
+import { getUserRepository } from "@/lib/typeorm";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -21,18 +21,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const email = credentials.email as string;
         const password = credentials.password as string;
 
-        const client = await pool.connect();
         try {
-          const result = await client.query(
-            "SELECT * FROM users WHERE email = $1",
-            [email]
-          );
+          const userRepository = await getUserRepository();
+          const user = await userRepository.findOne({
+            where: { email },
+          });
 
-          if (result.rows.length === 0) {
+          if (!user) {
             return null;
           }
 
-          const user = result.rows[0];
           const isValid = await bcrypt.compare(password, user.password);
 
           if (isValid) {
@@ -47,12 +45,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         } catch (error) {
           console.error("Auth error:", error);
           return null;
-        } finally {
-          client.release();
         }
       },
     }),
   ],
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
 });
-

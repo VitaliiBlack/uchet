@@ -3,11 +3,6 @@ import pool from './db';
 const createTables = async () => {
   const client = await pool.connect();
   try {
-    // Drop old table if exists (optional)
-    await client.query(`
-      DROP TABLE IF EXISTS financial_data;
-    `);
-
     // Create users table
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -48,12 +43,7 @@ const createTables = async () => {
 const createSessionsTable = async () => {
   const client = await pool.connect();
   try {
-    // Drop old table if exists (optional)
-    await client.query(`
-      DROP TABLE IF EXISTS user_sessions;
-    `);
-
-    // Create new sessions table
+    // Keep the bootstrap additive only; never drop or reshape tables here.
     await client.query(`
       CREATE TABLE IF NOT EXISTS user_sessions (
         id SERIAL PRIMARY KEY,

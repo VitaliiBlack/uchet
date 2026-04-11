@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { useParams } from 'next/navigation';
-import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import styles from '../../../components/Calendar.module.css';
 import { useOperations } from './hooks/useOperations';
 import { DayTotals } from './components/DayTotals';
@@ -12,6 +11,12 @@ import { isEmptyOperation } from './utils';
 export default function DayPage() {
   const params = useParams();
   const date = params.date as string;
+
+  return <DayPageContent key={date} date={date} />;
+}
+
+function DayPageContent({ date }: { date: string }) {
+  const router = useRouter();
 
   const {
     displayOperations,
@@ -42,18 +47,29 @@ export default function DayPage() {
     }
   }, [displayOperations]);
 
+  React.useEffect(() => {
+    const blurActiveElement = () => {
+      const activeElement = document.activeElement;
+
+      if (activeElement instanceof HTMLElement) {
+        activeElement.blur();
+      }
+    };
+
+    window.addEventListener('pagehide', blurActiveElement);
+
+    return () => window.removeEventListener('pagehide', blurActiveElement);
+  }, []);
+
   const registerRef = useCallback((el: HTMLInputElement | null, r: number, c: number) => {
     if (!inputRefs.current[r]) {
       inputRefs.current[r] = [];
     }
     inputRefs.current[r][c] = el;
+  }, []);
 
-    // Отслеживаем фокус на элементе
-    if (el) {
-      el.addEventListener('focus', () => {
-        lastFocusedRef.current = { row: r, col: c };
-      });
-    }
+  const handleFocusCell = useCallback((row: number, col: number) => {
+    lastFocusedRef.current = { row, col };
   }, []);
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, colIndex: number) => {
@@ -92,6 +108,23 @@ export default function DayPage() {
     }
   }, []);
 
+  const handleBack = useCallback(() => {
+    const activeElement = document.activeElement;
+
+    if (activeElement instanceof HTMLElement) {
+      activeElement.blur();
+    }
+
+    window.setTimeout(() => {
+      if (window.history.length > 1) {
+        router.back();
+        return;
+      }
+
+      router.push('/');
+    }, 180);
+  }, [router]);
+
   if (loading) return <div className={styles['loading-indicator']}>Загрузка...</div>;
 
   return (
@@ -120,6 +153,7 @@ export default function DayPage() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   onKeyDown={handleKeyDown}
+                  onFocusCell={handleFocusCell}
                   onDelete={deleteOperation}
                   registerRef={registerRef}
                   isLastEmpty={isLastEmpty}
@@ -139,10 +173,11 @@ export default function DayPage() {
         </table>
       </div>
 
-      <div style={{ marginTop: '20px', textAlign: 'center' }}>
-        <Link href="/" className={styles['nav-button']} style={{ display: 'inline-block', textDecoration: 'none' }}>
-          Назад к календарю
-        </Link>
+      <div className={styles['day-footer']}>
+        <button type="button" className={styles['day-back-button']} onClick={handleBack}>
+          <span className={styles['day-back-icon']}>←</span>
+          <span>К календарю</span>
+        </button>
       </div>
     </div>
   );

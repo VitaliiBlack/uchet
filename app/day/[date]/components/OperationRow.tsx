@@ -1,7 +1,6 @@
 import React from 'react';
 import { FinancialOperation } from '@/lib/types';
 import styles from '../../../../components/Calendar.module.css';
-import { isEmptyOperation } from '../utils';
 
 interface OperationRowProps {
     op: FinancialOperation;
@@ -9,6 +8,7 @@ interface OperationRowProps {
     onChange: (localId: string, field: 'income' | 'expense' | 'description', value: string) => void;
     onBlur: (e: React.FocusEvent<HTMLInputElement>, localId: string, rowIndex: number) => void;
     onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>, r: number, c: number) => void;
+    onFocusCell: (rowIndex: number, colIndex: number) => void;
     onDelete: (id: number, localId: string) => void;
     registerRef: (el: HTMLInputElement | null, r: number, c: number) => void;
     isLastEmpty: boolean;
@@ -20,6 +20,7 @@ export const OperationRow = React.memo(({
     onChange,
     onBlur,
     onKeyDown,
+    onFocusCell,
     onDelete,
     registerRef,
     isLastEmpty
@@ -29,6 +30,7 @@ export const OperationRow = React.memo(({
     return (
         <tr>
             <td>
+                <span className={styles['mobile-field-label']}>Доход</span>
                 <input
                     ref={el => registerRef(el, rowIndex, 0)}
                     data-row-index={rowIndex}
@@ -38,11 +40,13 @@ export const OperationRow = React.memo(({
                     onChange={(e) => onChange(op.localId!, 'income', e.target.value)}
                     onBlur={(e) => onBlur(e, op.localId!, rowIndex)}
                     onKeyDown={(e) => onKeyDown(e, rowIndex, 0)}
+                    onFocus={() => onFocusCell(rowIndex, 0)}
                     className={styles['editable-input']}
                     placeholder="0"
                 />
             </td>
             <td>
+                <span className={styles['mobile-field-label']}>Расход</span>
                 <input
                     ref={el => registerRef(el, rowIndex, 1)}
                     data-row-index={rowIndex}
@@ -52,11 +56,13 @@ export const OperationRow = React.memo(({
                     onChange={(e) => onChange(op.localId!, 'expense', e.target.value)}
                     onBlur={(e) => onBlur(e, op.localId!, rowIndex)}
                     onKeyDown={(e) => onKeyDown(e, rowIndex, 1)}
+                    onFocus={() => onFocusCell(rowIndex, 1)}
                     className={styles['editable-input']}
                     placeholder="0"
                 />
             </td>
             <td>
+                <span className={styles['mobile-field-label']}>Описание</span>
                 <input
                     ref={el => registerRef(el, rowIndex, 2)}
                     data-row-index={rowIndex}
@@ -65,19 +71,23 @@ export const OperationRow = React.memo(({
                     onChange={(e) => onChange(op.localId!, 'description', e.target.value)}
                     onBlur={(e) => onBlur(e, op.localId!, rowIndex)}
                     onKeyDown={(e) => onKeyDown(e, rowIndex, 2)}
+                    onFocus={() => onFocusCell(rowIndex, 2)}
                     className={styles['editable-input']}
                     placeholder="Описание"
                 />
             </td>
-            <td className={op.profit >= 0 ? styles.positive : styles.negative}>
-                {op.profit}
+            <td className={`${styles['operation-profit-cell']} ${op.profit >= 0 ? styles.positive : styles.negative}`}>
+                <span className={styles['mobile-field-label']}>Прибыль</span>
+                <span>{op.profit}</span>
             </td>
-            <td>
+            <td className={styles['operation-actions-cell']}>
                 {showDelete && (
                     <button
+                        type="button"
                         onClick={() => onDelete(op.id, op.localId!)}
                         className={styles['delete-icon-button']}
                         title="Удалить"
+                        aria-label="Удалить операцию"
                         tabIndex={-1}
                     >
                         ✕

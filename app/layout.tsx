@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { SessionProvider } from "next-auth/react";
 import { auth } from "@/lib/auth";
-import Navbar from "@/components/Navbar";
-import { headers } from "next/headers";
+import AppShell from "@/components/AppShell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,21 +25,13 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
-  const headersList = await headers();
-  const pathname = headersList.get("x-pathname") || "";
-  const isLoginPage = pathname === "/login";
 
   return (
-    <html lang="en">
+    <html lang="ru">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionProvider session={session}>
-          {!isLoginPage && <Navbar />}
-          <main className={isLoginPage ? "" : "container mx-auto px-4 py-8"}>
-            {children}
-          </main>
-        </SessionProvider>
+        <AppShell session={session}>{children}</AppShell>
       </body>
     </html>
   );

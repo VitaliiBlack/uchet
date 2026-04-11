@@ -6,6 +6,14 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Something went wrong";
+};
+
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
@@ -76,8 +84,8 @@ export default function LoginPage() {
           router.refresh();
         }
       }
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

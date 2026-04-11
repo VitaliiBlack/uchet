@@ -1,42 +1,52 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import {
+    useMutation,
+    useQuery,
+    useQueryClient,
+} from '@tanstack/react-query';
 import { FinancialOperation } from '@/lib/types';
 import { isEmptyOperation, createEmptyOperation, calculateProfit } from '../utils';
 
-export const useOperations = (date: string) => {
-    const [operations, setOperations] = useState<FinancialOperation[]>([]);
-    const [loading, setLoading] = useState(true);
+const fetchOperationsByDate = async (date: string): Promise<FinancialOperation[]> => {
+    const response = await fetch(`/api/financial-data?date=${date}`, {
+        cache: 'no-store',
+    });
 
-    const fetchOperations = useCallback(async () => {
-        try {
-            setLoading(true);
-            const response = await fetch(`/api/financial-data?date=${date}`);
-            if (!response.ok) {
-                setOperations([]);
-                return;
-            }
-            const data = await response.json();
-            const filtered = data.map((op: FinancialOperation) => ({
+    if (!response.ok) {
+        throw new Error('Failed to fetch operations');
+    }
+
+    return response.json();
+};
+
+export const useOperations = (date: string) => {
+    const queryClient = useQueryClient();
+    const [localOperations, setLocalOperations] = useState<FinancialOperation[] | null>(null);
+
+    const {
+        data,
+        isLoading,
+        isFetching,
+    } = useQuery({
+        queryKey: ['operations', date],
+        queryFn: () => fetchOperationsByDate(date),
+        enabled: Boolean(date),
+    });
+
+    const hydratedOperations = useMemo(
+        () =>
+            (data ?? []).map((op) => ({
                 ...op,
                 localId: `saved-${op.id}`,
-            }));
-            setOperations(filtered);
-        } catch (err) {
-            console.error('Error fetching financial data:', err);
-            setOperations([]);
-        } finally {
-            setLoading(false);
-        }
-    }, [date]);
+            })),
+        [data]
+    );
 
-    useEffect(() => {
-        if (date) fetchOperations();
-    }, [date, fetchOperations]);
+    const operations = localOperations ?? hydratedOperations;
 
-    const saveOperation = useCallback(async (op: FinancialOperation) => {
-        const isNew = op.id === -1;
-        if (isEmptyOperation(op)) return;
-
-        try {
+    const saveMutation = useMutation({
+        mutationFn: async (op: FinancialOperation) => {
+            const isNew = op.id === -1;
             const method = isNew ? 'POST' : 'PUT';
             const body = isNew
                 ? { date: op.date, income: op.income, expense: op.expense, description: op.description }
@@ -45,68 +55,93 @@ export const useOperations = (date: string) => {
             const response = await fetch('/api/financial-data', {
                 method,
                 headers: { 'Content-Type': 'application/json' },
+                keepalive: true,
                 body: JSON.stringify(body),
             });
 
-            if (!response.ok) throw new Error('Failed to save');
+            if (!response.ok) {
+                throw new Error('Failed to save');
+            }
 
-            const savedOp = await response.json();
+            return response.json();
+        },
+        onSuccess: async (savedOp, originalOp) => {
+            setLocalOperations((prev) =>
+                (prev ?? hydratedOperations).map((item) =>
+                    item.localId === originalOp.localId
+                        ? { ...savedOp, localId: originalOp.localId }
+                        : item
+                )
+            );
 
-            // Используем функциональное обновление для предотвращения лишних ре-рендеров
-            setOperations(prev => {
-                const updated = prev.map(p =>
-                    p.localId === op.localId
-                        ? { ...savedOp, localId: op.localId }
-                        : p
-                );
-                // Проверяем, действительно ли изменилось состояние
-                const hasChanged = prev.some((p, idx) =>
-                    p.localId === op.localId && (p.id !== updated[idx].id || p.income !== updated[idx].income || p.expense !== updated[idx].expense)
-                );
-                return hasChanged ? updated : prev;
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['operations', date] }),
+                queryClient.invalidateQueries({ queryKey: ['calendar-operations'] }),
+            ]);
+        },
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: async ({ id }: { id: number }) => {
+            const response = await fetch(`/api/financial-data?id=${id}`, {
+                method: 'DELETE',
             });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete');
+            }
+        },
+        onSuccess: async (_, variables) => {
+            setLocalOperations((prev) => (prev ?? hydratedOperations).filter((op) => op.id !== variables.id));
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['operations', date] }),
+                queryClient.invalidateQueries({ queryKey: ['calendar-operations'] }),
+            ]);
+        },
+    });
+
+    const saveOperation = useCallback(async (op: FinancialOperation) => {
+        if (isEmptyOperation(op)) return;
+
+        try {
+            await saveMutation.mutateAsync(op);
         } catch (err) {
             console.error('Save error:', err);
         }
-    }, []);
+    }, [saveMutation]);
 
     const deleteOperation = useCallback(async (id: number, localId: string) => {
         if (id === -1) {
-            setOperations(prev => prev.filter(op => op.localId !== localId));
+            setLocalOperations(prev => (prev ?? hydratedOperations).filter(op => op.localId !== localId));
             return;
         }
 
         if (!confirm('Вы уверены, что хотите удалить эту операцию?')) return;
 
         try {
-            const response = await fetch(`/api/financial-data?id=${id}`, {
-                method: 'DELETE',
-            });
-
-            if (!response.ok) throw new Error('Failed to delete');
-
-            setOperations(prev => prev.filter(op => op.id !== id));
+            await deleteMutation.mutateAsync({ id });
         } catch (err) {
             console.error('Delete error:', err);
             alert('Ошибка при удалении');
         }
-    }, []);
+    }, [deleteMutation, hydratedOperations]);
 
     const handleChange = useCallback((localId: string, field: 'income' | 'expense' | 'description', value: string) => {
-        setOperations(prev => {
-            const opIndex = prev.findIndex(op => op.localId === localId);
+        setLocalOperations(prev => {
+            const source = prev ?? hydratedOperations;
+            const opIndex = source.findIndex(op => op.localId === localId);
 
-            if (opIndex === -1 && prev.length === 0) {
+            if (opIndex === -1 && source.length === 0) {
                 const newOp = { ...createEmptyOperation(date), [field]: value, localId };
                 newOp.profit = calculateProfit(newOp.income, newOp.expense);
                 return [newOp];
             }
 
-            const updatedOps = [...prev];
+            const updatedOps = [...source];
             if (opIndex === -1) {
                 const newOp = { ...createEmptyOperation(date), [field]: value, localId };
                 newOp.profit = calculateProfit(newOp.income, newOp.expense);
-                return [...prev, newOp];
+                return [...source, newOp];
             }
 
             const existing = updatedOps[opIndex];
@@ -116,20 +151,25 @@ export const useOperations = (date: string) => {
 
             return updatedOps;
         });
-    }, [date]);
+    }, [date, hydratedOperations]);
 
     const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>, localId: string, rowIndex: number) => {
-        const relatedTarget = e.relatedTarget as HTMLElement;
-        const isSameRow = relatedTarget && relatedTarget.getAttribute('data-row-index') === String(rowIndex);
+        const relatedTarget = e.relatedTarget as HTMLElement | null;
+        const isSameRow = relatedTarget?.getAttribute('data-row-index') === String(rowIndex);
 
         if (isSameRow) return;
 
-        // Сохраняем операцию без вызова setOperations, чтобы избежать ре-рендера
         setTimeout(() => {
-            const op = operations.find(o => o.localId === localId);
-            if (op) saveOperation(op);
-        }, 200);
-    }, [operations, saveOperation]);
+            setLocalOperations((prev) => {
+                const currentOps = prev ?? hydratedOperations;
+                const op = currentOps.find((item) => item.localId === localId);
+                if (op) {
+                    void saveOperation(op);
+                }
+                return currentOps;
+            });
+        }, 150);
+    }, [hydratedOperations, saveOperation]);
 
     const displayOperations = useMemo(() => {
         const ops = [...operations];
@@ -155,7 +195,7 @@ export const useOperations = (date: string) => {
     return {
         operations,
         displayOperations,
-        loading,
+        loading: isLoading || isFetching,
         totals,
         handleChange,
         handleBlur,

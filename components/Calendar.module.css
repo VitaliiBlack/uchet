@@ -1,188 +1,327 @@
 .calendar-container {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  max-width: 1200px;
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  width: 100%;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 6px 0 0;
+  box-sizing: border-box;
+}
+
+.calendar-shell-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.calendar-year-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #111827;
+  font-size: 1.1rem;
+  font-weight: 600;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+}
+
+.calendar-shell-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.today-pill {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #111827;
+  font-size: 0.98rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.today-pill:hover {
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+}
+
+.menu-trigger {
+  min-width: 44px;
 }
 
 .calendar-header {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.month-row {
+  display: flex;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e0e0e0;
+  justify-content: space-between;
+  gap: 14px;
 }
 
 .nav-group {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .monthly-summary {
   display: flex;
-  gap: 15px;
-  background-color: #fff;
-  padding: 8px 15px;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  gap: 10px;
+  flex-wrap: wrap;
+  background-color: rgba(255, 255, 255, 0.76);
+  padding: 8px 12px;
+  border-radius: 20px;
+  max-width: 100%;
+  box-sizing: border-box;
+  align-self: flex-start;
 }
 
 .summary-item {
   display: flex;
   align-items: center;
+  gap: 6px;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.88rem;
 }
 
 .nav-button {
-  padding: 8px 16px;
-  background-color: #4a90e2;
-  color: white;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background-color: rgba(255, 255, 255, 0.94);
+  color: #111827;
   border: none;
-  border-radius: 5px;
+  border-radius: 999px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s;
+  font-weight: 500;
+  font-size: 1.5rem;
+  line-height: 1;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .nav-button:hover {
-  background-color: #3a7bc8;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
 }
 
 .month-year {
-  font-size: 1.5rem;
-  color: #333;
+  font-size: clamp(2.3rem, 5vw, 3.5rem);
+  color: #111827;
   margin: 0;
+  font-weight: 800;
+  text-transform: lowercase;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
 }
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 1px;
-  background-color: #e0e0e0;
-  border-radius: 5px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0;
+  background-color: rgba(209, 213, 219, 0.9);
+  border-radius: 28px;
   overflow: hidden;
+  min-width: 0;
 }
 
 .calendar-day-header {
-  background-color: #f0f0f0;
-  padding: 10px;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 10px 2px;
   text-align: center;
-  font-weight: bold;
-  color: #555;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  min-width: 0;
+  box-sizing: border-box;
+  font-size: 0.68rem;
 }
 
 .calendar-day {
   background-color: white;
-  padding: 10px;
-  min-height: 140px;
+  padding: 8px 6px;
+  min-height: 134px;
   cursor: pointer;
   transition: background-color 0.3s;
   position: relative;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.day-hitbox {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.day-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  pointer-events: none;
 }
 
 .calendar-day:hover {
-  background-color: #f0f8ff;
+  background-color: #f8fbff;
 }
 
 .calendar-day.selected {
   background-color: #e6f2ff;
-  border: 2px solid #4a90e2;
+  box-shadow: inset 0 0 0 2px #4a90e2;
 }
 
 .calendar-day.today {
-  background-color: #fff9e6;
-  border: 1px solid #ffcc00;
+  background: linear-gradient(180deg, #fff4f4 0%, #fff0ef 100%);
 }
 
 .calendar-day.today:hover {
-  background-color: #fff3cc;
+  background: linear-gradient(180deg, #ffeceb 0%, #ffe8e6 100%);
 }
 
 .calendar-day.today .day-number {
-  color: #cc9900;
+  color: #ffffff;
+  background: #ff5a52;
 }
 
 .calendar-day.empty {
-  background-color: #f9f9f9;
+  background-color: #f9fafb;
   cursor: default;
 }
 
+.day-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
 .day-number {
-  font-weight: bold;
-  font-size: 1.2rem;
-  color: #333;
-  margin-bottom: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: #111827;
+  margin-bottom: 6px;
+  line-height: 1.1;
 }
 
 .daily-summary {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  min-width: 0;
 }
 
 .financial-item {
   display: flex;
   justify-content: space-between;
-  font-size: 0.85rem;
-  padding: 2px 4px;
-  border-radius: 3px;
-  background-color: #f8f8f8;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background-color: rgba(248, 250, 252, 0.96);
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .financial-item.income {
-  color: #2ecc71;
+  color: #22c55e;
 }
 
 .financial-item.expense {
-  color: #e74c3c;
+  color: #ef4444;
 }
 
 .financial-item.profit {
-  color: #3498db;
-  font-weight: bold;
+  color: #3b82f6;
+  font-weight: 700;
 }
 
 .label {
-  font-weight: bold;
-  margin-right: 4px;
-  font-size: 1.1em;
+  font-weight: 700;
+  font-size: 1em;
   color: inherit;
+  flex-shrink: 0;
+}
+
+.item-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.desktop-profit-item {
+  display: flex;
+}
+
+.mobile-count-item {
+  display: none;
+  color: #6366f1;
+  font-weight: 600;
 }
 
 .operations-preview {
   flex-grow: 1;
   overflow: hidden;
+  min-width: 0;
 }
 
 .operation-preview {
   display: flex;
   justify-content: space-between;
-  font-size: 0.8rem;
-  padding: 2px 4px;
-  margin-bottom: 2px;
-  background-color: #f0f0f0;
-  border-radius: 2px;
+  gap: 6px;
+  font-size: 0.74rem;
+  padding: 2px 5px;
+  margin-bottom: 3px;
+  background-color: #f3f4f6;
+  border-radius: 8px;
 }
 
 .positive {
-  color: #2ecc71;
+  color: #22c55e;
 }
 
 .negative {
-  color: #e74c3c;
+  color: #ef4444;
 }
 
 .more-indicator {
   font-size: 0.75rem;
-  color: #888;
+  color: #6b7280;
   text-align: center;
   margin-top: 4px;
 }
@@ -197,7 +336,7 @@
 .loading-indicator {
   text-align: center;
   padding: 40px;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: #666;
 }
 
@@ -205,44 +344,61 @@
   margin-top: 30px;
   padding: 20px;
   background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
 
 .financial-section-header {
+  position: relative;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e0e0e0;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(229, 231, 235, 0.9);
 }
 
+.financial-section-header h1,
 .financial-section-header h3 {
   margin: 0;
-  color: #333;
+  color: #111827;
   font-size: 1.3rem;
+}
+
+.day-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  padding-right: 56px;
 }
 
 .daily-totals {
   display: flex;
   gap: 20px;
   font-size: 1rem;
+  flex-wrap: wrap;
+}
+
+.header-menu-trigger {
+  flex-shrink: 0;
 }
 
 .total-income {
-  color: #2ecc71;
-  font-weight: bold;
+  color: #22c55e;
+  font-weight: 700;
 }
 
 .total-expense {
-  color: #e74c3c;
-  font-weight: bold;
+  color: #ef4444;
+  font-weight: 700;
 }
 
 .total-profit {
-  color: #3498db;
-  font-weight: bold;
+  color: #3b82f6;
+  font-weight: 700;
 }
 
 .add-operation-form {
@@ -338,14 +494,19 @@
   border: none;
   color: #e74c3c;
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 999px;
   transition: background-color 0.2s, color 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.6;
+  opacity: 0.7;
+}
+
+.delete-icon-button:focus-visible {
+  outline: 2px solid rgba(239, 68, 68, 0.35);
+  outline-offset: 2px;
 }
 
 .delete-icon-button:hover {
@@ -362,32 +523,51 @@
   width: 100%;
   border-collapse: collapse;
   margin-top: 10px;
+  table-layout: fixed;
 }
 
 .operations-table th,
 .operations-table td {
   padding: 12px;
   text-align: left;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e5e7eb;
+  min-width: 0;
 }
 
 .operations-table th {
-  background-color: #f0f0f0;
-  font-weight: bold;
-  color: #555;
+  background-color: #f3f4f6;
+  font-weight: 700;
+  color: #4b5563;
 }
 
 .operations-table tr:hover {
-  background-color: #f5f5f5;
+  background-color: #f9fafb;
 }
 
 .operations-table .editable-input,
 .operations-table .new-input {
   padding: 6px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
   width: 100%;
   box-sizing: border-box;
+}
+
+.operation-profit-cell {
+  font-weight: 700;
+}
+
+.operation-actions-cell {
+  width: 48px;
+  text-align: right;
+}
+
+.operation-actions-cell .delete-icon-button {
+  margin-left: auto;
+}
+
+.mobile-field-label {
+  display: none;
 }
 
 .no-operations {
@@ -397,21 +577,21 @@
   padding: 20px;
 }
 
-/* Стили для редактируемых полей в таблице */
 .editable-input {
-  padding: 6px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
   width: 100%;
   box-sizing: border-box;
   font-size: 1rem;
   background-color: #fff;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
 .editable-input:focus {
-  border-color: #4a90e2;
+  border-color: #3b82f6;
   outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
 }
 
 .new-input {
@@ -430,7 +610,6 @@
   background-color: #fff;
 }
 
-/* Убираем стрелки у number input */
 .editable-input[type="number"]::-webkit-inner-spin-button,
 .editable-input[type="number"]::-webkit-outer-spin-button,
 .new-input[type="number"]::-webkit-inner-spin-button,
@@ -446,256 +625,347 @@
   -moz-appearance: textfield;
 }
 
-/* Мобильная адаптация - современный чистый дизайн */
+.day-footer {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.day-back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #111827;
+  font-size: 0.98rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.day-back-button:hover {
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+}
+
+.day-back-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
 @media (max-width: 768px) {
   .calendar-container {
-    padding: 12px;
-    max-width: 100%;
-    background-color: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    width: calc(100vw - 12px);
+    max-width: none;
+    margin-left: calc(50% - 50vw + 6px);
+    margin-right: calc(50% - 50vw + 6px);
+    padding: 4px 0 0;
+    background-color: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .calendar-shell-bar {
+    margin-bottom: 10px;
+    padding: 0 8px;
+  }
+
+  .calendar-year-pill,
+  .today-pill {
+    min-height: 40px;
+    padding: 0 14px;
+    font-size: 0.92rem;
+  }
+
+  .calendar-shell-actions {
+    gap: 8px;
   }
 
   .calendar-header {
-    flex-direction: column;
-    gap: 12px;
-    text-align: center;
-    padding-bottom: 15px;
-    margin-bottom: 15px;
-    border-bottom: 1px solid #eaeaea;
+    gap: 10px;
+    text-align: left;
+    margin-bottom: 10px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .month-row {
+    align-items: flex-end;
   }
 
   .nav-button {
-    width: 100%;
-    margin-bottom: 8px;
-    padding: 10px 16px;
-    border-radius: 8px;
-    font-size: 1rem;
-    background-color: #4a90e2;
-    color: white;
-    border: none;
-    font-weight: 600;
-    transition: background-color 0.2s;
-  }
-
-  .nav-button:hover {
-    background-color: #3a7bc8;
+    width: 38px;
+    height: 38px;
+    font-size: 1.25rem;
   }
 
   .month-year {
-    font-size: 1.3rem;
-    color: #333;
-    font-weight: 600;
+    font-size: 2.3rem;
+  }
+
+  .monthly-summary {
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 18px;
+    width: 100%;
+  }
+
+  .summary-item {
+    font-size: 0.68rem;
   }
 
   .calendar-grid {
-    grid-template-columns: repeat(7, 1fr);
-    gap: 1px;
-    background-color: #e0e0e0;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    border-radius: 22px;
+  }
+
+  .calendar-day-header {
+    padding: 7px 1px;
+    font-size: 0.54rem;
+    letter-spacing: 0.02em;
   }
 
   .calendar-day {
-    min-height: 100px;
-    padding: 8px;
-    background-color: #fff;
-    border-radius: 4px;
+    min-height: 88px;
+    padding: 4px 2px;
+    border-radius: 0;
   }
 
   .day-number {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 6px;
+    width: 1.4rem;
+    height: 1.4rem;
+    font-size: 0.74rem;
+    margin-bottom: 3px;
+  }
+
+  .daily-summary {
+    gap: 1px;
+    margin-bottom: 0;
   }
 
   .financial-item {
-    font-size: 0.75rem;
-    padding: 3px 5px;
-    border-radius: 4px;
-    background-color: #f8f9fa;
+    font-size: 0.5rem;
+    line-height: 1.15;
+    padding: 2px 4px;
+    gap: 1px;
+  }
+
+  .desktop-profit-item {
+    display: none;
+  }
+
+  .mobile-count-item {
+    display: flex;
   }
 
   .operations-preview {
     display: none;
-    /* скрываем превью на мобильных для экономии места */
   }
 
   .financial-section-header {
-    flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eaeaea;
+    gap: 10px;
   }
 
   .financial-section-header h1 {
-    font-size: 1.5rem;
-    color: #333;
-    margin: 0;
+    font-size: 1rem;
+  }
+
+  .day-header-content {
+    width: 100%;
+    gap: 8px;
+    padding-right: 52px;
   }
 
   .daily-totals {
-    flex-direction: column;
-    gap: 8px;
-    font-size: 1rem;
     width: 100%;
+    gap: 8px;
+    font-size: 0.88rem;
   }
 
-  .total-income,
-  .total-expense,
-  .total-profit {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 12px;
-    border-radius: 8px;
-    background-color: #f8f9fa;
-    font-weight: 600;
+  .header-menu-trigger {
+    position: absolute;
+    top: 0;
+    right: 0;
   }
 
-  .total-income {
-    color: #2ecc71;
-    border-left: 4px solid #2ecc71;
-  }
-
-  .total-expense {
-    color: #e74c3c;
-    border-left: 4px solid #e74c3c;
-  }
-
-  .total-profit {
-    color: #3498db;
-    border-left: 4px solid #3498db;
-  }
-
-  /* Таблица операций: улучшенная мобильная версия */
   .operations-list {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    border-radius: 8px;
-    border: 1px solid #eaeaea;
-    background-color: #fff;
+    overflow: visible;
   }
 
   .operations-table {
-    width: 100%;
-    min-width: unset;
-    table-layout: fixed;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0 12px;
+    margin-top: 12px;
   }
 
-  .operations-table th,
+  .operations-table thead,
+  .operations-table tfoot {
+    display: none;
+  }
+
+  .operations-table tbody,
+  .operations-table tr,
   .operations-table td {
-    padding: 12px 8px;
-    font-size: 0.9rem;
-    text-align: left;
-    border-bottom: 1px solid #eaeaea;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
   }
 
-  .operations-table th {
-    background-color: #f8f9fa;
-    font-weight: 600;
-    color: #555;
-    position: sticky;
-    top: 0;
-    z-index: 1;
+  .operations-table tr {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 12px 56px 12px 12px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    position: relative;
   }
 
-  .operations-table tr:last-child td {
+  .operations-table td {
     border-bottom: none;
+    padding: 0;
+    margin-bottom: 10px;
+  }
+
+  .operations-table td:last-child {
+    margin-bottom: 0;
+  }
+
+  .mobile-field-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   .editable-input {
-    padding: 10px 8px;
-    font-size: 16px;
-    min-height: 40px;
-    box-sizing: border-box;
-    touch-action: manipulation;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+    font-size: 0.95rem;
+    padding: 10px 12px;
+  }
+
+  .operation-profit-cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.95rem;
+  }
+
+  .operation-actions-cell {
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .delete-icon-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    width: 36px;
+    height: 36px;
+    background: #fee2e2;
+    opacity: 1;
+    padding: 0;
+    margin-left: 0;
+  }
+
+  .day-footer {
+    margin-top: 18px;
+    padding: 0 8px;
+  }
+
+  .day-back-button {
     width: 100%;
-    background-color: #fff;
-    transition: border-color 0.2s;
-  }
-
-  .editable-input:focus {
-    border-color: #4a90e2;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
-  }
-
-  /* Убираем горизонтальную прокрутку внутри таблицы, если не требуется */
-  .operations-list::-webkit-scrollbar {
-    height: 6px;
-  }
-
-  .operations-list::-webkit-scrollbar-thumb {
-    background-color: #c1c1c1;
-    border-radius: 3px;
+    max-width: 320px;
+    min-height: 44px;
+    font-size: 0.94rem;
   }
 }
 
-/* Для очень маленьких экранов (до 480px) */
 @media (max-width: 480px) {
   .calendar-container {
-    padding: 8px;
-    border-radius: 10px;
+    width: calc(100vw - 8px);
+    margin-left: calc(50% - 50vw + 4px);
+    margin-right: calc(50% - 50vw + 4px);
+    padding-top: 2px;
+  }
+
+  .calendar-shell-bar {
+    padding: 0 4px;
   }
 
   .calendar-header {
     gap: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .calendar-year-pill,
+  .today-pill {
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 0.82rem;
   }
 
   .nav-button {
-    padding: 9px 14px;
-    font-size: 0.95rem;
+    width: 34px;
+    height: 34px;
+    font-size: 1.1rem;
   }
 
   .month-year {
-    font-size: 1.2rem;
+    font-size: 2rem;
   }
 
-  .calendar-grid {
-    grid-template-columns: repeat(7, 1fr);
-    gap: 0;
+  .monthly-summary {
+    gap: 6px;
+    padding: 7px 8px;
+  }
+
+  .summary-item {
+    font-size: 0.66rem;
+  }
+
+  .calendar-day-header {
+    font-size: 0.46rem;
+    padding: 6px 1px;
   }
 
   .calendar-day {
-    min-height: 70px;
-    padding: 4px;
+    min-height: 76px;
+    padding: 4px 2px;
   }
 
   .day-number {
-    font-size: 0.85rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.66rem;
+    margin-bottom: 2px;
   }
 
   .financial-item {
-    font-size: 0.65rem;
-  }
-
-  .financial-section-header h1 {
-    font-size: 1.3rem;
+    font-size: 0.44rem;
+    padding: 2px 3px;
   }
 
   .daily-totals {
-    font-size: 0.95rem;
+    font-size: 0.88rem;
   }
 
-  .operations-table th,
-  .operations-table td {
-    padding: 10px 6px;
-    font-size: 0.85rem;
+  .day-back-button {
+    min-height: 42px;
+    padding: 0 16px;
+    font-size: 0.9rem;
   }
-
-  .editable-input {
-    padding: 9px 7px;
-    min-height: 38px;
-    font-size: 15px;
-  }
-
-  /* Скрываем заголовок "Прибыль" на очень маленьких экранах? */
-  /* .operations-table th:nth-child(4),
-  .operations-table td:nth-child(4) {
-    display: none;
-  } */
 }
