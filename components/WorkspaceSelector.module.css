@@ -3,6 +3,7 @@
   align-items: center;
   gap: 8px;
   min-width: 0;
+  max-width: 100%;
 }
 
 .workspaceSelect {
@@ -18,6 +19,7 @@
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
+  min-inline-size: 0;
 }
 
 .iconButton {
@@ -75,6 +77,9 @@
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 28px 60px rgba(15, 23, 42, 0.22);
   padding: 16px;
+  max-height: min(620px, calc(100dvh - 32px));
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .shareHeader {
@@ -83,6 +88,11 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
+  min-width: 0;
+}
+
+.shareHeader > div {
+  min-width: 0;
 }
 
 .shareHeader h2,
@@ -100,6 +110,12 @@
   margin: 4px 0 0;
   color: #6b7280;
   font-size: 0.88rem;
+}
+
+.shareHeader p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .closeButton {
@@ -136,12 +152,14 @@
 
 .memberRow,
 .addMemberRow {
-  display: flex;
+  display: grid;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .memberRow {
+  grid-template-columns: minmax(0, 1fr) auto;
   justify-content: space-between;
   min-width: 0;
   padding: 10px 12px;
@@ -149,7 +167,7 @@
   background: #f5f6f8;
 }
 
-.memberRow span {
+.memberEmail {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -158,7 +176,8 @@
 
 .memberSelect {
   min-width: 0;
-  flex: 1;
+  width: 100%;
+  max-width: 100%;
   height: 42px;
   border: 0;
   border-radius: 14px;
@@ -166,6 +185,12 @@
   color: #111827;
   padding: 0 12px;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.addMemberRow {
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .addButton,
@@ -176,6 +201,7 @@
   cursor: pointer;
   padding: 0 12px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .addButton {
@@ -190,12 +216,15 @@
 
 @media (max-width: 640px) {
   .workspaceControl {
-    width: 100%;
+    flex: 1 1 auto;
+    width: auto;
+    flex-wrap: wrap;
     gap: 6px;
+    overflow: hidden;
   }
 
   .workspaceSelect {
-    flex: 1;
+    flex: 1 1 calc(100% - 92px);
     min-width: 0;
     height: 40px;
     font-size: 0.84rem;
@@ -212,13 +241,73 @@
     height: 40px;
     padding: 0 12px;
     font-size: 0.82rem;
+    flex: 1 1 74px;
   }
 
   .sharePanel {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
+    left: max(10px, env(safe-area-inset-left));
+    right: max(10px, env(safe-area-inset-right));
+    bottom: max(10px, env(safe-area-inset-bottom));
     width: auto;
     border-radius: 24px;
+    padding: 14px;
+    max-height: min(78dvh, 620px);
+  }
+
+  .shareHeader {
+    margin-bottom: 12px;
+  }
+
+  .shareHeader h2 {
+    font-size: 1rem;
+  }
+
+  .memberRow {
+    padding: 9px 10px;
+    gap: 8px;
+  }
+
+  .memberEmail,
+  .memberSelect {
+    font-size: 0.92rem;
+  }
+
+  .removeButton {
+    min-width: 72px;
+    padding: 0 10px;
+  }
+
+  .addMemberRow {
+    grid-template-columns: 1fr;
+  }
+
+  .addButton {
+    width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .workspaceSelect {
+    flex-basis: 100%;
+  }
+
+  .accessButton {
+    flex: 1 1 auto;
+  }
+
+  .sharePanel {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    padding: 12px;
+  }
+
+  .memberRow {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .removeButton {
+    justify-self: end;
   }
 }

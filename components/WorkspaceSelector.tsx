@@ -180,7 +180,7 @@ export default function WorkspaceSelector({ compact = false }: WorkspaceSelector
                 <div className={styles.memberList}>
                   {membersQuery.data.members.map((member) => (
                     <div key={member.id} className={styles.memberRow}>
-                      <span>{member.email}</span>
+                      <span className={styles.memberEmail}>{member.email}</span>
                       <button
                         type="button"
                         className={styles.removeButton}
@@ -206,6 +206,9 @@ export default function WorkspaceSelector({ compact = false }: WorkspaceSelector
                     onChange={(event) => setSelectedUserId(event.target.value)}
                     aria-label="Выбрать пользователя"
                   >
+                    <option value="" disabled>
+                      Выберите email
+                    </option>
                     {membersQuery.data.availableUsers.map((user) => (
                       <option key={user.id} value={user.id}>
                         {user.email}
