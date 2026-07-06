@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Workspace, WorkspaceMembersResponse } from "@/lib/types";
-
-const SELECTED_WORKSPACE_KEY = "uchet:selectedWorkspaceId";
+import {
+  setSelectedWorkspaceId,
+  useSelectedWorkspaceId,
+} from "@/components/workspaceSelectionStore";
 
 const fetchWorkspaces = async (): Promise<Workspace[]> => {
   const response = await fetch("/api/workspaces", { cache: "no-store" });
@@ -32,15 +34,7 @@ const fetchWorkspaceMembers = async (
 
 export const useWorkspaces = () => {
   const queryClient = useQueryClient();
-  const [storedWorkspaceId, setStoredWorkspaceId] = useState<number | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    const stored = window.localStorage.getItem(SELECTED_WORKSPACE_KEY);
-    const parsed = stored ? Number(stored) : null;
-    return parsed && Number.isInteger(parsed) ? parsed : null;
-  });
+  const storedWorkspaceId = useSelectedWorkspaceId();
 
   const { data: workspaces = [], isLoading } = useQuery({
     queryKey: ["workspaces"],
@@ -63,15 +57,17 @@ export const useWorkspaces = () => {
       return;
     }
 
-    window.localStorage.setItem(
-      SELECTED_WORKSPACE_KEY,
-      String(activeWorkspace.id)
-    );
-  }, [activeWorkspace]);
+    if (activeWorkspace.id !== storedWorkspaceId) {
+      setSelectedWorkspaceId(activeWorkspace.id);
+    }
+  }, [activeWorkspace, storedWorkspaceId]);
 
-  const setActiveWorkspaceId = (workspaceId: number) => {
-    setStoredWorkspaceId(workspaceId);
-    window.localStorage.setItem(SELECTED_WORKSPACE_KEY, String(workspaceId));
+  const setActiveWorkspaceId = async (workspaceId: number) => {
+    setSelectedWorkspaceId(workspaceId);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["calendar-operations"] }),
+      queryClient.invalidateQueries({ queryKey: ["operations"] }),
+    ]);
   };
 
   const createWorkspace = useMutation({
@@ -89,7 +85,7 @@ export const useWorkspaces = () => {
       return response.json() as Promise<Workspace>;
     },
     onSuccess: async (workspace) => {
-      setActiveWorkspaceId(workspace.id);
+      await setActiveWorkspaceId(workspace.id);
       await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       await queryClient.invalidateQueries({ queryKey: ["calendar-operations"] });
     },
@@ -127,8 +123,7 @@ export const useWorkspaces = () => {
       return response.json() as Promise<Workspace>;
     },
     onSuccess: async () => {
-      setStoredWorkspaceId(null);
-      window.localStorage.removeItem(SELECTED_WORKSPACE_KEY);
+      setSelectedWorkspaceId(null);
       await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       await queryClient.invalidateQueries({ queryKey: ["calendar-operations"] });
     },

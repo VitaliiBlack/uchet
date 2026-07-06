@@ -15,7 +15,10 @@ export const authConfig = {
                 "/api/auth",
                 "/_next",
                 "/favicon.ico",
+                "/icons",
+                "/manifest.webmanifest",
                 "/public",
+                "/sw.js",
             ].some((path) => nextUrl.pathname.startsWith(path));
 
             // Redirect authenticated users away from login
