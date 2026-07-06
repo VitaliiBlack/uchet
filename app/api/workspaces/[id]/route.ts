@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getDataSource } from "@/lib/typeorm";
-import { getWorkspaceById, workspaceNotFoundResponse } from "@/lib/workspaces";
+import { getOwnedWorkspaceById, workspaceNotFoundResponse } from "@/lib/workspaces";
 
 export const runtime = "nodejs";
 
@@ -28,7 +28,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const userId = Number(session.user.id);
   const workspaceId = await getWorkspaceId(context);
-  if (!workspaceId || !(await getWorkspaceById(userId, workspaceId))) {
+  if (!workspaceId || !(await getOwnedWorkspaceById(userId, workspaceId))) {
     return workspaceNotFoundResponse();
   }
 
@@ -60,7 +60,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
   const userId = Number(session.user.id);
   const workspaceId = await getWorkspaceId(context);
-  if (!workspaceId || !(await getWorkspaceById(userId, workspaceId))) {
+  if (!workspaceId || !(await getOwnedWorkspaceById(userId, workspaceId))) {
     return workspaceNotFoundResponse();
   }
 

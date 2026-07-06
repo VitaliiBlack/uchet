@@ -36,8 +36,7 @@ export async function GET(request: Request) {
       .addSelect('fo.description', 'description')
       .addSelect('fo.profit', 'profit')
       .from('financial_operations', 'fo')
-      .where('fo.user_id = :userId', { userId })
-      .andWhere('fo.workspace_id = :workspaceId', { workspaceId });
+      .where('fo.workspace_id = :workspaceId', { workspaceId });
 
     if (date) {
       query.andWhere('fo.date = :date', { date });
@@ -143,9 +142,8 @@ export async function PUT(request: Request) {
         expense: expenseNum,
         description: description || '',
       })
-      .where('id = :id AND user_id = :userId AND workspace_id = :workspaceId', {
+      .where('id = :id AND workspace_id = :workspaceId', {
         id,
-        userId,
         workspaceId,
       })
       .returning([
@@ -200,9 +198,8 @@ export async function DELETE(request: Request) {
       .createQueryBuilder()
       .delete()
       .from('financial_operations')
-      .where('id = :id AND user_id = :userId AND workspace_id = :workspaceId', {
+      .where('id = :id AND workspace_id = :workspaceId', {
         id,
-        userId,
         workspaceId,
       })
       .returning('id')

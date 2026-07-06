@@ -20,6 +20,8 @@ export async function GET(request: Request) {
     const rows = await dataSource.query(
       `
         SELECT id, user_id, name, archived_at, created_at, updated_at
+          , 'owner' AS access_role
+          , true AS is_owner
         FROM workspaces
         WHERE user_id = $1
         ORDER BY archived_at NULLS FIRST, id ASC
@@ -57,5 +59,8 @@ export async function POST(request: Request) {
     [userId, normalizedName]
   );
 
-  return NextResponse.json(rows[0], { status: 201 });
+  return NextResponse.json(
+    { ...rows[0], access_role: "owner", is_owner: true },
+    { status: 201 }
+  );
 }

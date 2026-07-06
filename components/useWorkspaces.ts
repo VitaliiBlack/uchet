@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Workspace } from "@/lib/types";
+import type { Workspace, WorkspaceMembersResponse } from "@/lib/types";
 
 const SELECTED_WORKSPACE_KEY = "uchet:selectedWorkspaceId";
 
@@ -11,6 +11,20 @@ const fetchWorkspaces = async (): Promise<Workspace[]> => {
 
   if (!response.ok) {
     throw new Error("Failed to fetch workspaces");
+  }
+
+  return response.json();
+};
+
+const fetchWorkspaceMembers = async (
+  workspaceId: number
+): Promise<WorkspaceMembersResponse> => {
+  const response = await fetch(`/api/workspaces/${workspaceId}/members`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch workspace members");
   }
 
   return response.json();
@@ -130,4 +144,71 @@ export const useWorkspaces = () => {
     renameWorkspace,
     archiveWorkspace,
   };
+};
+
+export const useWorkspaceMembers = (
+  workspaceId: number | null,
+  enabled: boolean
+) =>
+  useQuery({
+    queryKey: ["workspace-members", workspaceId],
+    queryFn: () => fetchWorkspaceMembers(workspaceId!),
+    enabled: Boolean(workspaceId && enabled),
+  });
+
+export const useWorkspaceMemberMutations = (workspaceId: number | null) => {
+  const queryClient = useQueryClient();
+
+  const addMember = useMutation({
+    mutationFn: async (userId: number) => {
+      if (!workspaceId) {
+        throw new Error("Missing workspace");
+      }
+
+      const response = await fetch(`/api/workspaces/${workspaceId}/members`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add member");
+      }
+
+      return response.json();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["workspace-members", workspaceId],
+      });
+      await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+    },
+  });
+
+  const removeMember = useMutation({
+    mutationFn: async (userId: number) => {
+      if (!workspaceId) {
+        throw new Error("Missing workspace");
+      }
+
+      const response = await fetch(
+        `/api/workspaces/${workspaceId}/members/${userId}`,
+        { method: "DELETE" }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to remove member");
+      }
+
+      return response.json();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["workspace-members", workspaceId],
+      });
+      await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+    },
+  });
+
+  return { addMember, removeMember };
 };

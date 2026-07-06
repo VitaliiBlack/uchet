@@ -21,4 +21,23 @@ export interface Workspace {
     archived_at: string | null;
     created_at: string;
     updated_at: string;
+    access_role: 'owner' | 'editor';
+    is_owner: boolean;
+}
+
+export interface WorkspaceMember {
+    id: number;
+    email: string;
+    role: 'editor';
+    created_at: string;
+}
+
+export interface WorkspaceUserOption {
+    id: number;
+    email: string;
+}
+
+export interface WorkspaceMembersResponse {
+    members: WorkspaceMember[];
+    availableUsers: WorkspaceUserOption[];
 }

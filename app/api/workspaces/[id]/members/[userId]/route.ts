@@ -6,37 +6,38 @@ import { getOwnedWorkspaceById, workspaceNotFoundResponse } from "@/lib/workspac
 export const runtime = "nodejs";
 
 interface RouteContext {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; userId: string }>;
 }
 
-export async function POST(_request: Request, context: RouteContext) {
+export async function DELETE(_request: Request, context: RouteContext) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const params = await context.params;
-  const userId = Number(session.user.id);
+  const ownerId = Number(session.user.id);
   const workspaceId = Number(params.id);
+  const memberUserId = Number(params.userId);
 
   if (
     !Number.isInteger(workspaceId) ||
     workspaceId <= 0 ||
-    !(await getOwnedWorkspaceById(userId, workspaceId, true))
+    !Number.isInteger(memberUserId) ||
+    memberUserId <= 0 ||
+    !(await getOwnedWorkspaceById(ownerId, workspaceId))
   ) {
     return workspaceNotFoundResponse();
   }
 
   const dataSource = await getDataSource();
-  const rows = await dataSource.query(
+  await dataSource.query(
     `
-      UPDATE workspaces
-      SET archived_at = NULL, updated_at = now()
-      WHERE user_id = $1 AND id = $2
-      RETURNING id, user_id, name, archived_at, created_at, updated_at
+      DELETE FROM workspace_members
+      WHERE workspace_id = $1 AND user_id = $2
     `,
-    [userId, workspaceId]
+    [workspaceId, memberUserId]
   );
 
-  return NextResponse.json(rows[0]);
+  return NextResponse.json({ success: true });
 }
