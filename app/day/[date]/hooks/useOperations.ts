@@ -5,6 +5,7 @@ import {
     useQueryClient,
 } from '@tanstack/react-query';
 import { FinancialOperation } from '@/lib/types';
+import { trackOperationAutosave } from '@/components/operationAutosaveStore';
 import { isEmptyOperation, createEmptyOperation, calculateProfit } from '../utils';
 
 type LocalOperationsUpdater =
@@ -132,7 +133,7 @@ export const useOperations = (date: string, workspaceId: number | null) => {
         if (isEmptyOperation(op) || !workspaceId) return;
 
         try {
-            await saveMutation.mutateAsync(op);
+            await trackOperationAutosave(saveMutation.mutateAsync(op));
         } catch (err) {
             console.error('Save error:', err);
         }
@@ -198,14 +199,7 @@ export const useOperations = (date: string, workspaceId: number | null) => {
 
         if (isSameRow) return;
 
-        if (!relatedTarget) {
-            saveOperationByLocalId(localId);
-            return;
-        }
-
-        setTimeout(() => {
-            saveOperationByLocalId(localId);
-        }, 150);
+        saveOperationByLocalId(localId);
     }, [saveOperationByLocalId]);
 
     const displayOperations = useMemo(() => {

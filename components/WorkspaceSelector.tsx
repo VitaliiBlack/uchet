@@ -7,6 +7,7 @@ import {
   useWorkspaceMembers,
   useWorkspaces,
 } from "./useWorkspaces";
+import { flushOperationAutosaves } from "./operationAutosaveStore";
 
 interface WorkspaceSelectorProps {
   compact?: boolean;
@@ -31,6 +32,20 @@ export default function WorkspaceSelector({ compact = false }: WorkspaceSelector
     sharingOpen && canManageWorkspace
   );
   const { addMember, removeMember } = useWorkspaceMemberMutations(activeWorkspaceId);
+
+  const blurActiveElement = () => {
+    const activeElement = document.activeElement;
+
+    if (activeElement instanceof HTMLElement) {
+      activeElement.blur();
+    }
+  };
+
+  const handleWorkspaceChange = async (workspaceId: number) => {
+    blurActiveElement();
+    await flushOperationAutosaves();
+    await setActiveWorkspaceId(workspaceId);
+  };
 
   const handleCreate = async () => {
     const name = window.prompt("Название магазина");
@@ -94,7 +109,8 @@ export default function WorkspaceSelector({ compact = false }: WorkspaceSelector
         className={styles.workspaceSelect}
         disabled={isLoading || !workspaces.length}
         value={activeWorkspaceId ?? ""}
-        onChange={(event) => void setActiveWorkspaceId(Number(event.target.value))}
+        onPointerDown={blurActiveElement}
+        onChange={(event) => void handleWorkspaceChange(Number(event.target.value))}
       >
         {workspaces.map((workspace) => (
           <option key={workspace.id} value={workspace.id}>
