@@ -7,9 +7,11 @@ import styles from './Calendar.module.css';
 import { FinancialOperation } from '@/lib/types';
 import { getTodayDateKey, normalizeDateKey } from '@/lib/date';
 import AppMenu from './AppMenu';
+import WorkspaceSelector from './WorkspaceSelector';
+import { useWorkspaces } from './useWorkspaces';
 
-const fetchCalendarOperations = async (): Promise<FinancialOperation[]> => {
-  const response = await fetch('/api/financial-data', {
+const fetchCalendarOperations = async (workspaceId: number): Promise<FinancialOperation[]> => {
+  const response = await fetch(`/api/financial-data?workspaceId=${workspaceId}`, {
     cache: 'no-store',
   });
 
@@ -25,9 +27,11 @@ const Calendar: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const todayDateKey = getTodayDateKey();
   const monthTitle = currentDate.toLocaleString('ru-RU', { month: 'long' });
+  const { activeWorkspaceId, isLoading: workspacesLoading } = useWorkspaces();
   const { data: operations = [], isLoading } = useQuery({
-    queryKey: ['calendar-operations'],
-    queryFn: fetchCalendarOperations,
+    queryKey: ['calendar-operations', activeWorkspaceId],
+    queryFn: () => fetchCalendarOperations(activeWorkspaceId!),
+    enabled: Boolean(activeWorkspaceId),
   });
 
   // Pre-process operations into a map for O(1) daily lookup
@@ -208,7 +212,10 @@ const Calendar: React.FC = () => {
   return (
     <div className={styles['calendar-container']}>
       <div className={styles['calendar-shell-bar']}>
-        <div className={styles['calendar-year-pill']}>{currentDate.getFullYear()}</div>
+        <div className={styles['calendar-shell-left']}>
+          <div className={styles['calendar-year-pill']}>{currentDate.getFullYear()}</div>
+          <WorkspaceSelector />
+        </div>
         <div className={styles['calendar-shell-actions']}>
           <button type="button" className={styles['today-pill']} onClick={goToToday}>
             Today
@@ -252,7 +259,7 @@ const Calendar: React.FC = () => {
         </div>
       </div>
 
-      {isLoading ? (
+      {workspacesLoading || isLoading ? (
         <div className={styles['loading-indicator']}>Загрузка данных...</div>
       ) : (
         <div className={styles['calendar-grid']}>

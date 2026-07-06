@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getDataSource } from '@/lib/typeorm';
+import { resolveWorkspaceId, workspaceNotFoundResponse } from '@/lib/workspaces';
 
 export const runtime = 'nodejs';
 
@@ -15,18 +16,28 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
+    const workspaceId = await resolveWorkspaceId(
+      userId,
+      searchParams.get('workspaceId')
+    );
+    if (!workspaceId) {
+      return workspaceNotFoundResponse();
+    }
+
     const dataSource = await getDataSource();
     const query = dataSource
       .createQueryBuilder()
       .select('fo.id', 'id')
       .addSelect('fo.user_id', 'user_id')
+      .addSelect('fo.workspace_id', 'workspace_id')
       .addSelect('fo.date::text', 'date')
       .addSelect('fo.income', 'income')
       .addSelect('fo.expense', 'expense')
       .addSelect('fo.description', 'description')
       .addSelect('fo.profit', 'profit')
       .from('financial_operations', 'fo')
-      .where('fo.user_id = :userId', { userId });
+      .where('fo.user_id = :userId', { userId })
+      .andWhere('fo.workspace_id = :workspaceId', { workspaceId });
 
     if (date) {
       query.andWhere('fo.date = :date', { date });
@@ -50,10 +61,15 @@ export async function POST(request: Request) {
   const userId = Number(session.user.id);
 
   try {
-    const { date, income, expense, description } = await request.json();
+    const { date, income, expense, description, workspaceId: rawWorkspaceId } = await request.json();
 
     if (!date) {
       return NextResponse.json({ error: 'Missing required field: date' }, { status: 400 });
+    }
+
+    const workspaceId = await resolveWorkspaceId(userId, rawWorkspaceId);
+    if (!workspaceId) {
+      return workspaceNotFoundResponse();
     }
 
     const incomeNum = parseFloat(income) || 0;
@@ -66,6 +82,7 @@ export async function POST(request: Request) {
       .into('financial_operations')
       .values({
         user_id: userId,
+        workspace_id: workspaceId,
         date,
         income: incomeNum,
         expense: expenseNum,
@@ -74,6 +91,7 @@ export async function POST(request: Request) {
       .returning([
         'id',
         'user_id',
+        'workspace_id',
         'date::text',
         'income',
         'expense',
@@ -102,10 +120,15 @@ export async function PUT(request: Request) {
   const userId = Number(session.user.id);
 
   try {
-    const { id, income, expense, description } = await request.json();
+    const { id, income, expense, description, workspaceId: rawWorkspaceId } = await request.json();
 
     if (!id) {
       return NextResponse.json({ error: 'Missing required field: id' }, { status: 400 });
+    }
+
+    const workspaceId = await resolveWorkspaceId(userId, rawWorkspaceId);
+    if (!workspaceId) {
+      return workspaceNotFoundResponse();
     }
 
     const incomeNum = parseFloat(income) || 0;
@@ -120,10 +143,15 @@ export async function PUT(request: Request) {
         expense: expenseNum,
         description: description || '',
       })
-      .where('id = :id AND user_id = :userId', { id, userId })
+      .where('id = :id AND user_id = :userId AND workspace_id = :workspaceId', {
+        id,
+        userId,
+        workspaceId,
+      })
       .returning([
         'id',
         'user_id',
+        'workspace_id',
         'date::text',
         'income',
         'expense',
@@ -157,15 +185,26 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const workspaceId = await resolveWorkspaceId(
+      userId,
+      searchParams.get('workspaceId')
+    );
     if (!id) {
       return NextResponse.json({ error: 'Missing id parameter' }, { status: 400 });
+    }
+    if (!workspaceId) {
+      return workspaceNotFoundResponse();
     }
     const dataSource = await getDataSource();
     const result = await dataSource
       .createQueryBuilder()
       .delete()
       .from('financial_operations')
-      .where('id = :id AND user_id = :userId', { id, userId })
+      .where('id = :id AND user_id = :userId AND workspace_id = :workspaceId', {
+        id,
+        userId,
+        workspaceId,
+      })
       .returning('id')
       .execute();
 

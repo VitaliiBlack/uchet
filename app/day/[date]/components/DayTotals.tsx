@@ -2,6 +2,7 @@ import React from 'react';
 import styles from '../../../../components/Calendar.module.css';
 import { parseDateKey } from '@/lib/date';
 import AppMenu from '@/components/AppMenu';
+import WorkspaceSelector from '@/components/WorkspaceSelector';
 
 interface DayTotalsProps {
     totals: {
@@ -19,6 +20,7 @@ export const DayTotals = React.memo(({ totals, date }: DayTotalsProps) => {
         <div className={styles['financial-section-header']}>
             <div className={styles['day-header-content']}>
                 <h1>Операции за {displayedDate.toLocaleDateString('ru-RU')}</h1>
+                <WorkspaceSelector compact />
                 <div className={styles['daily-totals']}>
                     <span className={styles['total-income']}>+ {totals.income}</span>
                     <span className={styles['total-expense']}>- {totals.expense}</span>

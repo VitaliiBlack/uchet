@@ -3,6 +3,7 @@ import { EntitySchema } from "typeorm";
 export interface FinancialOperationEntity {
   id: number;
   user_id: number;
+  workspace_id: number;
   date: string;
   income: string;
   expense: string;
@@ -21,6 +22,9 @@ export const FinancialOperationEntitySchema =
         generated: "increment",
       },
       user_id: {
+        type: Number,
+      },
+      workspace_id: {
         type: Number,
       },
       date: {

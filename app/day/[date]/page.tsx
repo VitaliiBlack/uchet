@@ -7,6 +7,7 @@ import { useOperations } from './hooks/useOperations';
 import { DayTotals } from './components/DayTotals';
 import { OperationRow } from './components/OperationRow';
 import { isEmptyOperation } from './utils';
+import { useWorkspaces } from '@/components/useWorkspaces';
 
 export default function DayPage() {
   const params = useParams();
@@ -17,6 +18,10 @@ export default function DayPage() {
 
 function DayPageContent({ date }: { date: string }) {
   const router = useRouter();
+  const {
+    activeWorkspaceId,
+    isLoading: workspacesLoading,
+  } = useWorkspaces();
 
   const {
     displayOperations,
@@ -25,7 +30,7 @@ function DayPageContent({ date }: { date: string }) {
     handleChange,
     handleBlur,
     deleteOperation,
-  } = useOperations(date);
+  } = useOperations(date, activeWorkspaceId);
 
   // This ref must stay here to coordinate focus between rows
   const inputRefs = React.useRef<(HTMLInputElement | null)[][]>([]);
@@ -125,7 +130,7 @@ function DayPageContent({ date }: { date: string }) {
     }, 180);
   }, [router]);
 
-  if (loading) return <div className={styles['loading-indicator']}>Загрузка...</div>;
+  if (workspacesLoading || loading) return <div className={styles['loading-indicator']}>Загрузка...</div>;
 
   return (
     <div className={styles['calendar-container']}>

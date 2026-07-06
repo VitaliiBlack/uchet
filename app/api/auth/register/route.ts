@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { getUserRepository } from '@/lib/typeorm';
+import { ensureDefaultWorkspace } from '@/lib/workspaces';
 
 export const runtime = 'nodejs';
 
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
     });
 
     const savedUser = await userRepository.save(newUser);
+    await ensureDefaultWorkspace(savedUser.id);
 
     return NextResponse.json(
       { id: savedUser.id, email: savedUser.email },

@@ -15,6 +15,13 @@
   margin-bottom: 14px;
 }
 
+.calendar-shell-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
 .calendar-year-pill {
   display: inline-flex;
   align-items: center;
@@ -674,6 +681,14 @@
   .calendar-shell-bar {
     margin-bottom: 10px;
     padding: 0 8px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .calendar-shell-left {
+    width: 100%;
+    gap: 8px;
   }
 
   .calendar-year-pill,
@@ -685,6 +700,7 @@
 
   .calendar-shell-actions {
     gap: 8px;
+    justify-content: flex-end;
   }
 
   .calendar-header {

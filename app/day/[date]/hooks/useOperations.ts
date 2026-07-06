@@ -7,8 +7,11 @@ import {
 import { FinancialOperation } from '@/lib/types';
 import { isEmptyOperation, createEmptyOperation, calculateProfit } from '../utils';
 
-const fetchOperationsByDate = async (date: string): Promise<FinancialOperation[]> => {
-    const response = await fetch(`/api/financial-data?date=${date}`, {
+const fetchOperationsByDate = async (
+    date: string,
+    workspaceId: number
+): Promise<FinancialOperation[]> => {
+    const response = await fetch(`/api/financial-data?date=${date}&workspaceId=${workspaceId}`, {
         cache: 'no-store',
     });
 
@@ -19,7 +22,7 @@ const fetchOperationsByDate = async (date: string): Promise<FinancialOperation[]
     return response.json();
 };
 
-export const useOperations = (date: string) => {
+export const useOperations = (date: string, workspaceId: number | null) => {
     const queryClient = useQueryClient();
     const [localOperations, setLocalOperations] = useState<FinancialOperation[] | null>(null);
 
@@ -28,9 +31,9 @@ export const useOperations = (date: string) => {
         isLoading,
         isFetching,
     } = useQuery({
-        queryKey: ['operations', date],
-        queryFn: () => fetchOperationsByDate(date),
-        enabled: Boolean(date),
+        queryKey: ['operations', date, workspaceId],
+        queryFn: () => fetchOperationsByDate(date, workspaceId!),
+        enabled: Boolean(date && workspaceId),
     });
 
     const hydratedOperations = useMemo(
@@ -49,8 +52,8 @@ export const useOperations = (date: string) => {
             const isNew = op.id === -1;
             const method = isNew ? 'POST' : 'PUT';
             const body = isNew
-                ? { date: op.date, income: op.income, expense: op.expense, description: op.description }
-                : { id: op.id, income: op.income, expense: op.expense, description: op.description };
+                ? { date: op.date, income: op.income, expense: op.expense, description: op.description, workspaceId }
+                : { id: op.id, income: op.income, expense: op.expense, description: op.description, workspaceId };
 
             const response = await fetch('/api/financial-data', {
                 method,
@@ -83,7 +86,7 @@ export const useOperations = (date: string) => {
 
     const deleteMutation = useMutation({
         mutationFn: async ({ id }: { id: number }) => {
-            const response = await fetch(`/api/financial-data?id=${id}`, {
+            const response = await fetch(`/api/financial-data?id=${id}&workspaceId=${workspaceId}`, {
                 method: 'DELETE',
             });
 
@@ -101,14 +104,14 @@ export const useOperations = (date: string) => {
     });
 
     const saveOperation = useCallback(async (op: FinancialOperation) => {
-        if (isEmptyOperation(op)) return;
+        if (isEmptyOperation(op) || !workspaceId) return;
 
         try {
             await saveMutation.mutateAsync(op);
         } catch (err) {
             console.error('Save error:', err);
         }
-    }, [saveMutation]);
+    }, [saveMutation, workspaceId]);
 
     const deleteOperation = useCallback(async (id: number, localId: string) => {
         if (id === -1) {
