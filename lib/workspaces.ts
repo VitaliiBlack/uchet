@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDataSource } from "@/lib/typeorm";
 
-export const DEFAULT_WORKSPACE_NAME = "Магазин 1";
-
 export interface WorkspaceRow {
   id: number;
   user_id: number;
@@ -63,43 +61,6 @@ export const getActiveWorkspaces = async (userId: number) => {
   return rows.map(normalizeWorkspace);
 };
 
-export const ensureDefaultWorkspace = async (userId: number) => {
-  const dataSource = await getDataSource();
-  const existing = await dataSource.query(
-    `
-      SELECT id, user_id, name, archived_at, created_at, updated_at
-      FROM workspaces
-      WHERE user_id = $1 AND archived_at IS NULL
-      ORDER BY id ASC
-      LIMIT 1
-    `,
-    [userId]
-  );
-
-  if (existing[0]) {
-    return normalizeWorkspace({
-      ...existing[0],
-      access_role: "owner",
-      is_owner: true,
-    });
-  }
-
-  const created = await dataSource.query(
-    `
-      INSERT INTO workspaces (user_id, name)
-      VALUES ($1, $2)
-      RETURNING id, user_id, name, archived_at, created_at, updated_at
-    `,
-    [userId, DEFAULT_WORKSPACE_NAME]
-  );
-
-  return normalizeWorkspace({
-    ...created[0],
-    access_role: "owner",
-    is_owner: true,
-  });
-};
-
 export const getWorkspaceById = async (
   userId: number,
   workspaceId: number,
@@ -136,7 +97,7 @@ export const resolveWorkspaceId = async (
   workspaceId?: string | number | null
 ) => {
   if (!workspaceId) {
-    return (await ensureDefaultWorkspace(userId)).id;
+    return (await getActiveWorkspaces(userId))[0]?.id ?? null;
   }
 
   const parsed = Number(workspaceId);

@@ -27,7 +27,11 @@ const Calendar: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const todayDateKey = getTodayDateKey();
   const monthTitle = currentDate.toLocaleString('ru-RU', { month: 'long' });
-  const { activeWorkspaceId, isLoading: workspacesLoading } = useWorkspaces();
+  const {
+    activeWorkspaceId,
+    createWorkspace,
+    isLoading: workspacesLoading,
+  } = useWorkspaces();
   const { data: operations = [], isLoading } = useQuery({
     queryKey: ['calendar-operations', activeWorkspaceId],
     queryFn: () => fetchCalendarOperations(activeWorkspaceId!),
@@ -98,6 +102,17 @@ const Calendar: React.FC = () => {
 
   const goToToday = () => {
     setCurrentDate(new Date());
+  };
+
+  const handleCreateWorkspace = async () => {
+    const name = window.prompt('Название магазина');
+    const normalizedName = name?.trim();
+
+    if (!normalizedName) {
+      return;
+    }
+
+    await createWorkspace.mutateAsync(normalizedName);
   };
 
   // Calendar rendering helpers
@@ -261,6 +276,18 @@ const Calendar: React.FC = () => {
 
       {workspacesLoading || isLoading ? (
         <div className={styles['loading-indicator']}>Загрузка данных...</div>
+      ) : !activeWorkspaceId ? (
+        <div className={styles['empty-workspace-card']}>
+          <h3>Нет доступных магазинов</h3>
+          <p>
+            Создайте свой магазин или попросите владельца добавить ваш email в
+            доступ. Личный магазин больше не создаётся автоматически при
+            регистрации.
+          </p>
+          <button type="button" onClick={handleCreateWorkspace}>
+            Добавить магазин
+          </button>
+        </div>
       ) : (
         <div className={styles['calendar-grid']}>
           {renderCalendar()}

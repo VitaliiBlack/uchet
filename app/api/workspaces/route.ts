@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getDataSource } from "@/lib/typeorm";
-import { ensureDefaultWorkspace, getActiveWorkspaces } from "@/lib/workspaces";
+import { getActiveWorkspaces } from "@/lib/workspaces";
 
 export const runtime = "nodejs";
 
@@ -31,7 +31,6 @@ export async function GET(request: Request) {
     return NextResponse.json(rows);
   }
 
-  await ensureDefaultWorkspace(userId);
   return NextResponse.json(await getActiveWorkspaces(userId));
 }
 
