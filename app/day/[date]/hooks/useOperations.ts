@@ -7,6 +7,11 @@ import {
 import { FinancialOperation } from '@/lib/types';
 import { isEmptyOperation, createEmptyOperation, calculateProfit } from '../utils';
 
+type LocalOperationsUpdater =
+    | FinancialOperation[]
+    | null
+    | ((prev: FinancialOperation[] | null) => FinancialOperation[] | null);
+
 const fetchOperationsByDate = async (
     date: string,
     workspaceId: number
@@ -24,7 +29,27 @@ const fetchOperationsByDate = async (
 
 export const useOperations = (date: string, workspaceId: number | null) => {
     const queryClient = useQueryClient();
-    const [localOperations, setLocalOperations] = useState<FinancialOperation[] | null>(null);
+    const operationsScopeKey = `${date}:${workspaceId ?? 'none'}`;
+    const [localOperationsState, setLocalOperationsState] = useState<{
+        key: string;
+        operations: FinancialOperation[] | null;
+    }>({ key: operationsScopeKey, operations: null });
+
+    const localOperations =
+        localOperationsState.key === operationsScopeKey
+            ? localOperationsState.operations
+            : null;
+
+    const setScopedLocalOperations = useCallback((updater: LocalOperationsUpdater) => {
+        setLocalOperationsState((prev) => {
+            const scopedPrev =
+                prev.key === operationsScopeKey ? prev.operations : null;
+            const operations =
+                typeof updater === 'function' ? updater(scopedPrev) : updater;
+
+            return { key: operationsScopeKey, operations };
+        });
+    }, [operationsScopeKey]);
 
     const {
         data,
@@ -69,7 +94,7 @@ export const useOperations = (date: string, workspaceId: number | null) => {
             return response.json();
         },
         onSuccess: async (savedOp, originalOp) => {
-            setLocalOperations((prev) =>
+            setScopedLocalOperations((prev) =>
                 (prev ?? hydratedOperations).map((item) =>
                     item.localId === originalOp.localId
                         ? { ...savedOp, localId: originalOp.localId }
@@ -95,7 +120,7 @@ export const useOperations = (date: string, workspaceId: number | null) => {
             }
         },
         onSuccess: async (_, variables) => {
-            setLocalOperations((prev) => (prev ?? hydratedOperations).filter((op) => op.id !== variables.id));
+            setScopedLocalOperations((prev) => (prev ?? hydratedOperations).filter((op) => op.id !== variables.id));
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: ['operations', date] }),
                 queryClient.invalidateQueries({ queryKey: ['calendar-operations'] }),
@@ -115,7 +140,7 @@ export const useOperations = (date: string, workspaceId: number | null) => {
 
     const deleteOperation = useCallback(async (id: number, localId: string) => {
         if (id === -1) {
-            setLocalOperations(prev => (prev ?? hydratedOperations).filter(op => op.localId !== localId));
+            setScopedLocalOperations(prev => (prev ?? hydratedOperations).filter(op => op.localId !== localId));
             return;
         }
 
@@ -127,10 +152,10 @@ export const useOperations = (date: string, workspaceId: number | null) => {
             console.error('Delete error:', err);
             alert('Ошибка при удалении');
         }
-    }, [deleteMutation, hydratedOperations]);
+    }, [deleteMutation, hydratedOperations, setScopedLocalOperations]);
 
     const handleChange = useCallback((localId: string, field: 'income' | 'expense' | 'description', value: string) => {
-        setLocalOperations(prev => {
+        setScopedLocalOperations(prev => {
             const source = prev ?? hydratedOperations;
             const opIndex = source.findIndex(op => op.localId === localId);
 
@@ -154,7 +179,18 @@ export const useOperations = (date: string, workspaceId: number | null) => {
 
             return updatedOps;
         });
-    }, [date, hydratedOperations]);
+    }, [date, hydratedOperations, setScopedLocalOperations]);
+
+    const saveOperationByLocalId = useCallback((localId: string) => {
+        setScopedLocalOperations((prev) => {
+            const currentOps = prev ?? hydratedOperations;
+            const op = currentOps.find((item) => item.localId === localId);
+            if (op) {
+                void saveOperation(op);
+            }
+            return currentOps;
+        });
+    }, [hydratedOperations, saveOperation, setScopedLocalOperations]);
 
     const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>, localId: string, rowIndex: number) => {
         const relatedTarget = e.relatedTarget as HTMLElement | null;
@@ -162,17 +198,15 @@ export const useOperations = (date: string, workspaceId: number | null) => {
 
         if (isSameRow) return;
 
+        if (!relatedTarget) {
+            saveOperationByLocalId(localId);
+            return;
+        }
+
         setTimeout(() => {
-            setLocalOperations((prev) => {
-                const currentOps = prev ?? hydratedOperations;
-                const op = currentOps.find((item) => item.localId === localId);
-                if (op) {
-                    void saveOperation(op);
-                }
-                return currentOps;
-            });
+            saveOperationByLocalId(localId);
         }, 150);
-    }, [hydratedOperations, saveOperation]);
+    }, [saveOperationByLocalId]);
 
     const displayOperations = useMemo(() => {
         const ops = [...operations];
