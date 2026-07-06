@@ -36,6 +36,16 @@ const createTables = async () => {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (workspace_id) REFERENCES workspaces(id)
       );
+
+      CREATE TABLE IF NOT EXISTS workspace_members (
+        workspace_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        role VARCHAR(32) NOT NULL DEFAULT 'editor',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+        PRIMARY KEY (workspace_id, user_id),
+        FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
     `);
 
     // Create index on date for faster queries
@@ -44,6 +54,8 @@ const createTables = async () => {
       CREATE INDEX IF NOT EXISTS idx_financial_operations_user_date ON financial_operations(user_id, date);
       CREATE INDEX IF NOT EXISTS idx_financial_operations_user_workspace_date ON financial_operations(user_id, workspace_id, date);
       CREATE INDEX IF NOT EXISTS idx_workspaces_user_active ON workspaces(user_id, archived_at, id);
+      CREATE INDEX IF NOT EXISTS idx_workspace_members_user_id ON workspace_members(user_id);
+      CREATE INDEX IF NOT EXISTS idx_workspace_members_workspace_id ON workspace_members(workspace_id);
     `);
 
     console.log('Tables created successfully');
