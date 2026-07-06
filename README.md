@@ -25,8 +25,8 @@
 Обязательные переменные:
 
 ```bash
-DATABASE_URL="postgresql://user:password@host:5432/database?sslmode=require"
-NEXTAUTH_SECRET="replace-with-a-secure-random-value"
+DATABASE_URL="<set-postgres-connection-string-in-local-env-only>"
+NEXTAUTH_SECRET="<set-secure-random-value-in-local-env-only>"
 ```
 
 Опционально для локальной разработки:

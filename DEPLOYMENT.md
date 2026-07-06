@@ -16,8 +16,8 @@
 Укажите реальные значения только в настройках платформы деплоя.
 
 ```bash
-DATABASE_URL="postgresql://user:password@host:5432/database?sslmode=require"
-NEXTAUTH_SECRET="replace-with-a-secure-random-value"
+DATABASE_URL="<set-in-deployment-platform-env-only>"
+NEXTAUTH_SECRET="<set-secure-random-value-in-deployment-platform-env-only>"
 ```
 
 Опционально:
