@@ -132,6 +132,23 @@ function DayPageContent({ date }: { date: string }) {
 
   if (workspacesLoading || loading) return <div className={styles['loading-indicator']}>Загрузка...</div>;
 
+  if (!activeWorkspaceId) {
+    return (
+      <div className={styles['calendar-container']}>
+        <div className={styles['empty-workspace-card']}>
+          <h3>Нет доступных магазинов</h3>
+          <p>
+            Чтобы добавлять операции, создайте магазин или попросите владельца
+            выдать доступ к существующему магазину.
+          </p>
+          <button type="button" onClick={() => router.push('/')}>
+            К календарю
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles['calendar-container']}>
       <DayTotals totals={totals} date={date} />
