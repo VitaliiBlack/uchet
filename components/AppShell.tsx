@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react";
 import type { Session } from "next-auth";
 import { usePathname } from "next/navigation";
 import QueryProvider from "@/components/QueryProvider";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ export default function AppShell({ children, session }: AppShellProps) {
   return (
     <SessionProvider session={session}>
       <QueryProvider>
+        <ServiceWorkerRegistration />
         <main
           className={
             isLoginPage

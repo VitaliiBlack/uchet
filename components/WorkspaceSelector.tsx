@@ -94,7 +94,7 @@ export default function WorkspaceSelector({ compact = false }: WorkspaceSelector
         className={styles.workspaceSelect}
         disabled={isLoading || !workspaces.length}
         value={activeWorkspaceId ?? ""}
-        onChange={(event) => setActiveWorkspaceId(Number(event.target.value))}
+        onChange={(event) => void setActiveWorkspaceId(Number(event.target.value))}
       >
         {workspaces.map((workspace) => (
           <option key={workspace.id} value={workspace.id}>
