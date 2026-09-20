@@ -46,6 +46,12 @@ describe('validation', () => {
     expect(isValidDateKey('20-09-2026')).toBe(false);
     expect(isValidDateKey('nope')).toBe(false);
     expect(isValidDateKey(123)).toBe(false);
+    // real calendar dates only
+    expect(isValidDateKey('2026-02-30')).toBe(false);
+    expect(isValidDateKey('2019-13-01')).toBe(false);
+    expect(isValidDateKey('2026-00-10')).toBe(false);
+    expect(isValidDateKey('2026-04-31')).toBe(false);
+    expect(isValidDateKey('2024-02-29')).toBe(true);
   });
 
   it('parses money with parseFloat semantics', () => {

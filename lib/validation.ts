@@ -23,9 +23,21 @@ export const parsePositiveInt = (value: unknown): number | null => {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
 
-/** Validates a YYYY-MM-DD date key without timezone shifts. */
-export const isValidDateKey = (value: unknown): value is string =>
-  typeof value === "string" && DATE_KEY_PATTERN.test(value);
+/** Validates a real YYYY-MM-DD calendar date without timezone shifts. */
+export const isValidDateKey = (value: unknown): value is string => {
+  if (typeof value !== "string" || !DATE_KEY_PATTERN.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+};
 
 /** Mirrors the previous parseFloat(value) || 0 semantics. */
 export const parseMoney = (value: unknown): number => {
