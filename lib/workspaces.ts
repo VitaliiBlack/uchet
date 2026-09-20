@@ -52,6 +52,7 @@ export const getActiveWorkspaces = async (userId: number) => {
       FROM workspace_members wm
       JOIN workspaces w ON w.id = wm.workspace_id
       WHERE wm.user_id = $1
+        AND wm.status = 'accepted'
         AND w.archived_at IS NULL
         AND w.user_id <> $1
       ORDER BY id ASC
@@ -81,7 +82,7 @@ export const getWorkspaceById = async (
         (w.user_id = $1) AS is_owner
       FROM workspaces w
       LEFT JOIN workspace_members wm
-        ON wm.workspace_id = w.id AND wm.user_id = $1
+        ON wm.workspace_id = w.id AND wm.user_id = $1 AND wm.status = 'accepted'
       WHERE w.id = $2
         AND (w.user_id = $1 OR wm.user_id = $1)
         AND ($3::boolean OR w.archived_at IS NULL)

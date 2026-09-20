@@ -2,7 +2,12 @@
 
 import { useEffect, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Workspace, WorkspaceMembersResponse } from "@/lib/types";
+import type {
+  Workspace,
+  WorkspaceInvitation,
+  WorkspaceInvitationsResponse,
+  WorkspaceMembersResponse,
+} from "@/lib/types";
 import {
   setSelectedWorkspaceId,
   useSelectedWorkspaceId,
@@ -206,4 +211,48 @@ export const useWorkspaceMemberMutations = (workspaceId: number | null) => {
   });
 
   return { addMember, removeMember };
+};
+
+export const useInvitations = () =>
+  useQuery({
+    queryKey: ["invitations"],
+    queryFn: async (): Promise<WorkspaceInvitation[]> => {
+      const response = await fetch("/api/invitations", { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error("Failed to fetch invitations");
+      }
+      const data = (await response.json()) as WorkspaceInvitationsResponse;
+      return data.invitations;
+    },
+  });
+
+export const useInvitationMutations = () => {
+  const queryClient = useQueryClient();
+
+  const respond = useMutation({
+    mutationFn: async (input: {
+      workspaceId: number;
+      action: "accept" | "decline";
+    }) => {
+      const response = await fetch(`/api/invitations/${input.workspaceId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: input.action }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to respond to invitation");
+      }
+      return response.json();
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["invitations"] }),
+        queryClient.invalidateQueries({ queryKey: ["workspaces"] }),
+        queryClient.invalidateQueries({ queryKey: ["calendar-operations"] }),
+        queryClient.invalidateQueries({ queryKey: ["operations"] }),
+      ]);
+    },
+  });
+
+  return { respond };
 };

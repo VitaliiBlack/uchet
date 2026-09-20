@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 const unique = (p: string) =>
   `${p}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@test.dev`;
 
-test('service worker cache does not leak another account data', async ({ page, context }) => {
+test('service worker cache does not leak another account data', async ({ page }) => {
   const aEmail = unique('cache-a');
   const bEmail = unique('cache-b');
   const password = 'E2ePassw0rd!';

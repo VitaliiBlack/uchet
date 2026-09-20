@@ -29,7 +29,20 @@ export interface WorkspaceMember {
     id: number;
     email: string;
     role: 'editor';
+    status: 'pending' | 'accepted';
     created_at: string;
+}
+
+export interface WorkspaceInvitation {
+    workspace_id: number;
+    workspace_name: string;
+    owner_email: string;
+    role: 'editor';
+    created_at: string;
+}
+
+export interface WorkspaceInvitationsResponse {
+    invitations: WorkspaceInvitation[];
 }
 
 export interface WorkspaceMembersResponse {

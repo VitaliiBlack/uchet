@@ -24,7 +24,7 @@ export async function GET(_request: Request, context: RouteContext) {
   const dataSource = await getDataSource();
   const members = await dataSource.query(
     `
-      SELECT u.id, u.email, wm.role, wm.created_at
+      SELECT u.id, u.email, wm.role, wm.status, wm.created_at
       FROM workspace_members wm
       JOIN users u ON u.id = wm.user_id
       WHERE wm.workspace_id = $1
@@ -75,11 +75,11 @@ export async function POST(request: Request, context: RouteContext) {
 
   const rows = await dataSource.query(
     `
-      INSERT INTO workspace_members (workspace_id, user_id, role)
-      VALUES ($1, $2, 'editor')
+      INSERT INTO workspace_members (workspace_id, user_id, role, status)
+      VALUES ($1, $2, 'editor', 'pending')
       ON CONFLICT (workspace_id, user_id)
       DO UPDATE SET role = EXCLUDED.role
-      RETURNING workspace_id, user_id, role, created_at
+      RETURNING workspace_id, user_id, role, status, created_at
     `,
     [workspaceId, member.id]
   );

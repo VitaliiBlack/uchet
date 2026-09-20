@@ -3,6 +3,8 @@
 import { useState } from "react";
 import styles from "./WorkspaceSelector.module.css";
 import {
+  useInvitationMutations,
+  useInvitations,
   useWorkspaceMemberMutations,
   useWorkspaceMembers,
   useWorkspaces,
@@ -15,6 +17,7 @@ interface WorkspaceSelectorProps {
 
 export default function WorkspaceSelector({ compact = false }: WorkspaceSelectorProps) {
   const [sharingOpen, setSharingOpen] = useState(false);
+  const [invitesOpen, setInvitesOpen] = useState(false);
   const [memberEmail, setMemberEmail] = useState("");
   const {
     workspaces,
@@ -32,6 +35,8 @@ export default function WorkspaceSelector({ compact = false }: WorkspaceSelector
     sharingOpen && canManageWorkspace
   );
   const { addMember, removeMember } = useWorkspaceMemberMutations(activeWorkspaceId);
+  const { data: invitations = [] } = useInvitations();
+  const { respond } = useInvitationMutations();
 
   const blurActiveElement = () => {
     const activeElement = document.activeElement;
@@ -127,6 +132,18 @@ export default function WorkspaceSelector({ compact = false }: WorkspaceSelector
         +
       </button>
 
+      {invitations.length > 0 && (
+        <button
+          type="button"
+          className={styles.accessButton}
+          onClick={() => setInvitesOpen(true)}
+          title="Приглашения"
+          aria-label="Приглашения"
+        >
+          Приглашения ({invitations.length})
+        </button>
+      )}
+
       {!compact && canManageWorkspace && (
         <>
           <button
@@ -194,7 +211,10 @@ export default function WorkspaceSelector({ compact = false }: WorkspaceSelector
                 <div className={styles.memberList}>
                   {membersQuery.data.members.map((member) => (
                     <div key={member.id} className={styles.memberRow}>
-                      <span className={styles.memberEmail}>{member.email}</span>
+                      <span className={styles.memberEmail}>
+                        {member.email}
+                        {member.status === 'pending' ? ' (ожидает)' : ''}
+                      </span>
                       <button
                         type="button"
                         className={styles.removeButton}
@@ -233,6 +253,60 @@ export default function WorkspaceSelector({ compact = false }: WorkspaceSelector
                   Добавить
                 </button>
               </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {invitesOpen && (
+        <>
+          <button
+            type="button"
+            className={styles.shareBackdrop}
+            aria-label="Закрыть приглашения"
+            onClick={() => setInvitesOpen(false)}
+          />
+          <div className={styles.sharePanel} role="dialog" aria-modal="true">
+            <div className={styles.shareHeader}>
+              <div>
+                <h2>Приглашения</h2>
+                <p>Магазины, куда вас пригласили</p>
+              </div>
+              <button
+                type="button"
+                className={styles.closeButton}
+                onClick={() => setInvitesOpen(false)}
+                aria-label="Закрыть"
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.shareSection}>
+              {invitations.map((inv) => (
+                <div key={inv.workspace_id} className={styles.memberRow}>
+                  <span className={styles.memberEmail}>
+                    {inv.workspace_name} · {inv.owner_email}
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.addButton}
+                    onClick={() =>
+                      void respond.mutateAsync({ workspaceId: inv.workspace_id, action: 'accept' })
+                    }
+                  >
+                    Принять
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.removeButton}
+                    onClick={() =>
+                      void respond.mutateAsync({ workspaceId: inv.workspace_id, action: 'decline' })
+                    }
+                  >
+                    Отклонить
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         </>

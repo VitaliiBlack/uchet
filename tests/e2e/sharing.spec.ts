@@ -50,7 +50,14 @@ test('owner shares ONE shop; collaborator sees only that shop', async ({ page, b
   await page2.locator('button[type="submit"]').click();
   await expect(page2).toHaveURL(/localhost:3100\/$/);
 
-  // sees EXACTLY one shared shop, not the other
+  // invitation is pending: no shared shop until the member accepts
+  await expect(page2.getByRole('button', { name: 'Приглашения' })).toBeVisible({ timeout: 20000 });
+  await expect(page2.locator('select option')).toHaveCount(0);
+
+  await page2.getByRole('button', { name: 'Приглашения' }).click();
+  await page2.getByRole('button', { name: 'Принять' }).click();
+
+  // after consent: sees EXACTLY one shared shop, not the other
   await expect(page2.locator('select option')).toHaveCount(1);
   await expect(page2.getByRole('option', { name: 'Owned A (совм.)' })).toBeAttached();
   await expect(page2.getByRole('option', { name: 'Owned B' })).toHaveCount(0);

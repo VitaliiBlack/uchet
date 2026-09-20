@@ -8,8 +8,10 @@ afterEach(() => cleanup());
 const h = vi.hoisted(() => ({
   addMemberMutate: vi.fn(),
   removeMemberMutate: vi.fn(),
+  respondMutate: vi.fn(),
   workspacesState: { current: {} as Record<string, unknown> },
   membersState: { current: {} as Record<string, unknown> },
+  invitationsState: { current: [] as unknown[] },
 }));
 
 vi.mock('@/components/useWorkspaces', () => ({
@@ -18,6 +20,10 @@ vi.mock('@/components/useWorkspaces', () => ({
   useWorkspaceMemberMutations: () => ({
     addMember: { mutateAsync: h.addMemberMutate, isPending: false },
     removeMember: { mutateAsync: h.removeMemberMutate, isPending: false },
+  }),
+  useInvitations: () => ({ data: h.invitationsState.current }),
+  useInvitationMutations: () => ({
+    respond: { mutateAsync: h.respondMutate, isPending: false },
   }),
 }));
 
