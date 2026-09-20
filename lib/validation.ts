@@ -13,14 +13,19 @@ export const MAX_PASSWORD_LENGTH = 200;
 export const isValidPassword = (value: string): boolean =>
   value.length >= MIN_PASSWORD_LENGTH && value.length <= MAX_PASSWORD_LENGTH;
 
-/** Parses an integer id; returns null for anything invalid. */
+// Postgres SERIAL is int4; reject larger values before they reach the DB.
+const MAX_INT4 = 2147483647;
+
+/** Parses a positive integer id within the int4 range; null otherwise. */
 export const parsePositiveInt = (value: unknown): number | null => {
   if (value === null || value === undefined || value === "") {
     return null;
   }
 
   const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  return Number.isInteger(parsed) && parsed > 0 && parsed <= MAX_INT4
+    ? parsed
+    : null;
 };
 
 /** Validates a real YYYY-MM-DD calendar date without timezone shifts. */

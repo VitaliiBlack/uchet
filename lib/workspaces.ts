@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDataSource } from "@/lib/typeorm";
+import { parsePositiveInt } from "@/lib/validation";
 
 export interface WorkspaceRow {
   id: number;
@@ -100,8 +101,8 @@ export const resolveWorkspaceId = async (
     return (await getActiveWorkspaces(userId))[0]?.id ?? null;
   }
 
-  const parsed = Number(workspaceId);
-  if (!Number.isInteger(parsed) || parsed <= 0) {
+  const parsed = parsePositiveInt(workspaceId);
+  if (!parsed) {
     return null;
   }
 

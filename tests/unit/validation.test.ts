@@ -38,6 +38,10 @@ describe('validation', () => {
     expect(parsePositiveInt('abc')).toBeNull();
     expect(parsePositiveInt('')).toBeNull();
     expect(parsePositiveInt(null)).toBeNull();
+    // int4 bounds (regression: huge ids caused Postgres 500)
+    expect(parsePositiveInt(2147483647)).toBe(2147483647);
+    expect(parsePositiveInt(2147483648)).toBeNull();
+    expect(parsePositiveInt('999999999999999999999')).toBeNull();
   });
 
   it('validates YYYY-MM-DD date keys', () => {
