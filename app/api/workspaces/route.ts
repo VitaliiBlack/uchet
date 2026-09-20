@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { getDataSource } from "@/lib/typeorm";
 import { getActiveWorkspaces } from "@/lib/workspaces";
+import { getSessionUserId, unauthorized, badRequest } from "@/lib/api";
 
 export const runtime = "nodejs";
 
+const MAX_NAME_LENGTH = 100;
+
 export async function GET(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return unauthorized();
   }
 
-  const userId = Number(session.user.id);
   const { searchParams } = new URL(request.url);
   const includeArchived = searchParams.get("includeArchived") === "true";
   const dataSource = await getDataSource();
@@ -35,17 +36,24 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return unauthorized();
   }
 
-  const userId = Number(session.user.id);
-  const { name } = await request.json();
-  const normalizedName = String(name ?? "").trim();
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("Invalid JSON body");
+  }
 
+  const normalizedName = String(body.name ?? "").trim();
   if (!normalizedName) {
-    return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    return badRequest("Name is required");
+  }
+  if (normalizedName.length > MAX_NAME_LENGTH) {
+    return badRequest("Name is too long");
   }
 
   const dataSource = await getDataSource();

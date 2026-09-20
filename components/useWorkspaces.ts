@@ -155,7 +155,7 @@ export const useWorkspaceMemberMutations = (workspaceId: number | null) => {
   const queryClient = useQueryClient();
 
   const addMember = useMutation({
-    mutationFn: async (userId: number) => {
+    mutationFn: async (email: string) => {
       if (!workspaceId) {
         throw new Error("Missing workspace");
       }
@@ -163,7 +163,7 @@ export const useWorkspaceMemberMutations = (workspaceId: number | null) => {
       const response = await fetch(`/api/workspaces/${workspaceId}/members`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ email }),
       });
 
       if (!response.ok) {

@@ -15,7 +15,7 @@ interface WorkspaceSelectorProps {
 
 export default function WorkspaceSelector({ compact = false }: WorkspaceSelectorProps) {
   const [sharingOpen, setSharingOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [memberEmail, setMemberEmail] = useState("");
   const {
     workspaces,
     activeWorkspace,
@@ -90,16 +90,14 @@ export default function WorkspaceSelector({ compact = false }: WorkspaceSelector
   };
 
   const handleAddMember = async () => {
-    const userId = Number(
-      selectedUserId || membersQuery.data?.availableUsers[0]?.id
-    );
+    const email = memberEmail.trim();
 
-    if (!Number.isInteger(userId) || userId <= 0) {
+    if (!email) {
       return;
     }
 
-    await addMember.mutateAsync(userId);
-    setSelectedUserId("");
+    await addMember.mutateAsync(email);
+    setMemberEmail("");
   };
 
   return (
@@ -214,35 +212,27 @@ export default function WorkspaceSelector({ compact = false }: WorkspaceSelector
 
             <div className={styles.shareSection}>
               <h3>Добавить пользователя</h3>
-              {membersQuery.data?.availableUsers.length ? (
-                <div className={styles.addMemberRow}>
-                  <select
-                    className={styles.memberSelect}
-                    value={selectedUserId}
-                    onChange={(event) => setSelectedUserId(event.target.value)}
-                    aria-label="Выбрать пользователя"
-                  >
-                    <option value="" disabled>
-                      Выберите email
-                    </option>
-                    {membersQuery.data.availableUsers.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.email}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className={styles.addButton}
-                    onClick={handleAddMember}
-                    disabled={addMember.isPending}
-                  >
-                    Добавить
-                  </button>
-                </div>
-              ) : (
-                <p className={styles.mutedText}>Некого добавить</p>
-              )}
+              <p className={styles.mutedText}>
+                Введите email зарегистрированного пользователя.
+              </p>
+              <div className={styles.addMemberRow}>
+                <input
+                  className={styles.memberSelect}
+                  type="email"
+                  value={memberEmail}
+                  onChange={(event) => setMemberEmail(event.target.value)}
+                  placeholder="email@example.com"
+                  aria-label="Email пользователя"
+                />
+                <button
+                  type="button"
+                  className={styles.addButton}
+                  onClick={handleAddMember}
+                  disabled={addMember.isPending || !memberEmail.trim()}
+                >
+                  Добавить
+                </button>
+              </div>
             </div>
           </div>
         </>

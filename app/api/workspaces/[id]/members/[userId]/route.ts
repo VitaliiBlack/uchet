@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { getDataSource } from "@/lib/typeorm";
 import { getOwnedWorkspaceById, workspaceNotFoundResponse } from "@/lib/workspaces";
+import { getSessionUserId, unauthorized } from "@/lib/api";
+import { parsePositiveInt } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -10,21 +11,18 @@ interface RouteContext {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ownerId = await getSessionUserId();
+  if (!ownerId) {
+    return unauthorized();
   }
 
   const params = await context.params;
-  const ownerId = Number(session.user.id);
-  const workspaceId = Number(params.id);
-  const memberUserId = Number(params.userId);
+  const workspaceId = parsePositiveInt(params.id);
+  const memberUserId = parsePositiveInt(params.userId);
 
   if (
-    !Number.isInteger(workspaceId) ||
-    workspaceId <= 0 ||
-    !Number.isInteger(memberUserId) ||
-    memberUserId <= 0 ||
+    !workspaceId ||
+    !memberUserId ||
     !(await getOwnedWorkspaceById(ownerId, workspaceId))
   ) {
     return workspaceNotFoundResponse();

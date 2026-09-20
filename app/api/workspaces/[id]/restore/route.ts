@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { getDataSource } from "@/lib/typeorm";
 import { getOwnedWorkspaceById, workspaceNotFoundResponse } from "@/lib/workspaces";
+import { getSessionUserId, unauthorized } from "@/lib/api";
+import { parsePositiveInt } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -10,20 +11,13 @@ interface RouteContext {
 }
 
 export async function POST(_request: Request, context: RouteContext) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return unauthorized();
   }
 
-  const params = await context.params;
-  const userId = Number(session.user.id);
-  const workspaceId = Number(params.id);
-
-  if (
-    !Number.isInteger(workspaceId) ||
-    workspaceId <= 0 ||
-    !(await getOwnedWorkspaceById(userId, workspaceId, true))
-  ) {
+  const workspaceId = parsePositiveInt((await context.params).id);
+  if (!workspaceId || !(await getOwnedWorkspaceById(userId, workspaceId, true))) {
     return workspaceNotFoundResponse();
   }
 

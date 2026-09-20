@@ -1,29 +1,50 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { getDataSource } from '@/lib/typeorm';
 import { resolveWorkspaceId, workspaceNotFoundResponse } from '@/lib/workspaces';
+import { getSessionUserId, unauthorized, badRequest } from '@/lib/api';
+import {
+  isValidDateKey,
+  parseMoney,
+  parsePositiveInt,
+  sanitizeText,
+} from '@/lib/validation';
 
 export const runtime = 'nodejs';
 
+const OPERATION_RETURNING = [
+  'id',
+  'user_id',
+  'workspace_id',
+  'date::text',
+  'income',
+  'expense',
+  'description',
+  'profit',
+];
+
 // GET: fetch financial operations (optionally filtered by date)
 export async function GET(request: Request) {
-  const session = await auth();
-  if (!session || !session.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  } // Ensure user ID is present
-  const userId = Number(session.user.id);
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return unauthorized();
+  }
+
+  const { searchParams } = new URL(request.url);
+  const date = searchParams.get('date');
+
+  if (date !== null && !isValidDateKey(date)) {
+    return badRequest('Invalid date format, expected YYYY-MM-DD');
+  }
+
+  const workspaceId = await resolveWorkspaceId(
+    userId,
+    searchParams.get('workspaceId')
+  );
+  if (!workspaceId) {
+    return workspaceNotFoundResponse();
+  }
 
   try {
-    const { searchParams } = new URL(request.url);
-    const date = searchParams.get('date');
-    const workspaceId = await resolveWorkspaceId(
-      userId,
-      searchParams.get('workspaceId')
-    );
-    if (!workspaceId) {
-      return workspaceNotFoundResponse();
-    }
-
     const dataSource = await getDataSource();
     const query = dataSource
       .createQueryBuilder()
@@ -47,34 +68,39 @@ export async function GET(request: Request) {
     return NextResponse.json(await query.getRawMany());
   } catch (err) {
     console.error('Error fetching financial data:', err);
-    return NextResponse.json({ error: 'Error fetching financial data' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error fetching financial data' },
+      { status: 500 }
+    );
   }
 }
 
 // POST: create a new financial operation
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session || !session.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return unauthorized();
   }
-  const userId = Number(session.user.id);
+
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest('Invalid JSON body');
+  }
+
+  const { date } = body;
+  if (!isValidDateKey(date)) {
+    return badRequest('Missing or invalid required field: date');
+  }
+
+  const workspaceId = await resolveWorkspaceId(userId, body.workspaceId as number | string | null);
+  if (!workspaceId) {
+    return workspaceNotFoundResponse();
+  }
 
   try {
-    const { date, income, expense, description, workspaceId: rawWorkspaceId } = await request.json();
-
-    if (!date) {
-      return NextResponse.json({ error: 'Missing required field: date' }, { status: 400 });
-    }
-
-    const workspaceId = await resolveWorkspaceId(userId, rawWorkspaceId);
-    if (!workspaceId) {
-      return workspaceNotFoundResponse();
-    }
-
-    const incomeNum = parseFloat(income) || 0;
-    const expenseNum = parseFloat(expense) || 0;
     const dataSource = await getDataSource();
-
     const result = await dataSource
       .createQueryBuilder()
       .insert()
@@ -83,20 +109,11 @@ export async function POST(request: Request) {
         user_id: userId,
         workspace_id: workspaceId,
         date,
-        income: incomeNum,
-        expense: expenseNum,
-        description: description || '',
+        income: parseMoney(body.income),
+        expense: parseMoney(body.expense),
+        description: sanitizeText(body.description),
       })
-      .returning([
-        'id',
-        'user_id',
-        'workspace_id',
-        'date::text',
-        'income',
-        'expense',
-        'description',
-        'profit',
-      ])
+      .returning(OPERATION_RETURNING)
       .execute();
 
     const saved = result.raw[0];
@@ -106,61 +123,61 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.error('Error saving financial data:', err);
-    return NextResponse.json({ error: 'Error saving financial data' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error saving financial data' },
+      { status: 500 }
+    );
   }
 }
 
 // PUT: update an existing operation
 export async function PUT(request: Request) {
-  const session = await auth();
-  if (!session || !session.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return unauthorized();
   }
-  const userId = Number(session.user.id);
+
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest('Invalid JSON body');
+  }
+
+  const id = parsePositiveInt(body.id);
+  if (!id) {
+    return badRequest('Missing or invalid required field: id');
+  }
+
+  const workspaceId = await resolveWorkspaceId(userId, body.workspaceId as number | string | null);
+  if (!workspaceId) {
+    return workspaceNotFoundResponse();
+  }
 
   try {
-    const { id, income, expense, description, workspaceId: rawWorkspaceId } = await request.json();
-
-    if (!id) {
-      return NextResponse.json({ error: 'Missing required field: id' }, { status: 400 });
-    }
-
-    const workspaceId = await resolveWorkspaceId(userId, rawWorkspaceId);
-    if (!workspaceId) {
-      return workspaceNotFoundResponse();
-    }
-
-    const incomeNum = parseFloat(income) || 0;
-    const expenseNum = parseFloat(expense) || 0;
     const dataSource = await getDataSource();
-
     const result = await dataSource
       .createQueryBuilder()
       .update('financial_operations')
       .set({
-        income: incomeNum,
-        expense: expenseNum,
-        description: description || '',
+        income: parseMoney(body.income),
+        expense: parseMoney(body.expense),
+        description: sanitizeText(body.description),
       })
       .where('id = :id AND workspace_id = :workspaceId', {
         id,
         workspaceId,
       })
-      .returning([
-        'id',
-        'user_id',
-        'workspace_id',
-        'date::text',
-        'income',
-        'expense',
-        'description',
-        'profit',
-      ])
+      .returning(OPERATION_RETURNING)
       .execute();
 
     if (!result.affected) {
-      return NextResponse.json({ error: 'Operation not found or access denied' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Operation not found or access denied' },
+        { status: 404 }
+      );
     }
+
     const updated = result.raw[0];
     return NextResponse.json({
       ...updated,
@@ -168,31 +185,35 @@ export async function PUT(request: Request) {
     });
   } catch (err) {
     console.error('Error updating financial data:', err);
-    return NextResponse.json({ error: 'Error updating financial data' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error updating financial data' },
+      { status: 500 }
+    );
   }
 }
 
 // DELETE: delete an operation
 export async function DELETE(request: Request) {
-  const session = await auth();
-  if (!session || !session.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return unauthorized();
   }
-  const userId = Number(session.user.id);
+
+  const { searchParams } = new URL(request.url);
+  const id = parsePositiveInt(searchParams.get('id'));
+  if (!id) {
+    return badRequest('Missing or invalid id parameter');
+  }
+
+  const workspaceId = await resolveWorkspaceId(
+    userId,
+    searchParams.get('workspaceId')
+  );
+  if (!workspaceId) {
+    return workspaceNotFoundResponse();
+  }
 
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    const workspaceId = await resolveWorkspaceId(
-      userId,
-      searchParams.get('workspaceId')
-    );
-    if (!id) {
-      return NextResponse.json({ error: 'Missing id parameter' }, { status: 400 });
-    }
-    if (!workspaceId) {
-      return workspaceNotFoundResponse();
-    }
     const dataSource = await getDataSource();
     const result = await dataSource
       .createQueryBuilder()
@@ -206,11 +227,18 @@ export async function DELETE(request: Request) {
       .execute();
 
     if (!result.affected) {
-      return NextResponse.json({ error: 'Operation not found or access denied' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Operation not found or access denied' },
+        { status: 404 }
+      );
     }
+
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error('Error deleting financial data:', err);
-    return NextResponse.json({ error: 'Error deleting financial data' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Error deleting financial data' },
+      { status: 500 }
+    );
   }
 }

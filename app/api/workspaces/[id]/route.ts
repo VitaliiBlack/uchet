@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { getDataSource } from "@/lib/typeorm";
 import { getOwnedWorkspaceById, workspaceNotFoundResponse } from "@/lib/workspaces";
+import { getSessionUserId, unauthorized, badRequest } from "@/lib/api";
+import { parsePositiveInt } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -9,33 +10,35 @@ interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-const getWorkspaceId = async (context: RouteContext) => {
-  const params = await context.params;
-  const workspaceId = Number(params.id);
+const MAX_NAME_LENGTH = 100;
 
-  if (!Number.isInteger(workspaceId) || workspaceId <= 0) {
-    return null;
-  }
-
-  return workspaceId;
-};
+const getWorkspaceId = async (context: RouteContext) =>
+  parsePositiveInt((await context.params).id);
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return unauthorized();
   }
 
-  const userId = Number(session.user.id);
   const workspaceId = await getWorkspaceId(context);
   if (!workspaceId || !(await getOwnedWorkspaceById(userId, workspaceId))) {
     return workspaceNotFoundResponse();
   }
 
-  const { name } = await request.json();
-  const normalizedName = String(name ?? "").trim();
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("Invalid JSON body");
+  }
+
+  const normalizedName = String(body.name ?? "").trim();
   if (!normalizedName) {
-    return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    return badRequest("Name is required");
+  }
+  if (normalizedName.length > MAX_NAME_LENGTH) {
+    return badRequest("Name is too long");
   }
 
   const dataSource = await getDataSource();
@@ -53,12 +56,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = await getSessionUserId();
+  if (!userId) {
+    return unauthorized();
   }
 
-  const userId = Number(session.user.id);
   const workspaceId = await getWorkspaceId(context);
   if (!workspaceId || !(await getOwnedWorkspaceById(userId, workspaceId))) {
     return workspaceNotFoundResponse();

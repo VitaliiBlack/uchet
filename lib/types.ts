@@ -32,12 +32,6 @@ export interface WorkspaceMember {
     created_at: string;
 }
 
-export interface WorkspaceUserOption {
-    id: number;
-    email: string;
-}
-
 export interface WorkspaceMembersResponse {
     members: WorkspaceMember[];
-    availableUsers: WorkspaceUserOption[];
 }
