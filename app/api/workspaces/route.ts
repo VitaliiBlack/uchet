@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     return badRequest("Invalid JSON body");
   }
 
-  const normalizedName = String(body.name ?? "").trim();
+  const normalizedName = String(body.name ?? "").replace(/\u0000/g, "").trim();
   if (!normalizedName) {
     return badRequest("Name is required");
   }

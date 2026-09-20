@@ -35,18 +35,27 @@ export async function POST(request: Request, context: RouteContext) {
 
   const dataSource = await getDataSource();
 
+  // Only a pending invitation addressed to the caller can be acted on.
+  const pending = await dataSource.query(
+    `SELECT workspace_id, user_id, role, status
+       FROM workspace_members
+       WHERE workspace_id = $1 AND user_id = $2 AND status = 'pending'
+       LIMIT 1`,
+    [workspaceId, userId]
+  );
+
+  if (!pending[0]) {
+    return notFound("Invitation not found");
+  }
+
   if (action === "accept") {
-    const rows = await dataSource.query(
-      `UPDATE workspace_members
-         SET status = 'accepted'
-         WHERE workspace_id = $1 AND user_id = $2 AND status = 'pending'
-         RETURNING workspace_id, user_id, role, status`,
+    await dataSource.query(
+      `UPDATE workspace_members SET status = 'accepted'
+         WHERE workspace_id = $1 AND user_id = $2 AND status = 'pending'`,
       [workspaceId, userId]
     );
-    if (!rows[0]) {
-      return notFound("Invitation not found");
-    }
-    return NextResponse.json(rows[0]);
+
+    return NextResponse.json({ ...pending[0], status: "accepted" });
   }
 
   await dataSource.query(

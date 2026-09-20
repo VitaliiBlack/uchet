@@ -54,6 +54,9 @@ export const parseMoney = (value: unknown): number => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-/** Trims nothing, just bounds the length and guards non-strings. */
+/**
+ * Bounds the length, guards non-strings, and strips NUL bytes.
+ * Postgres text columns reject NUL, which would otherwise surface as a 500.
+ */
 export const sanitizeText = (value: unknown, maxLength = 2000): string =>
-  typeof value === "string" ? value.slice(0, maxLength) : "";
+  typeof value === "string" ? value.replace(/\u0000/g, "").slice(0, maxLength) : "";
