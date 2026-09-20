@@ -10,6 +10,12 @@ export const notFound = (message = "Not found") => jsonError(message, 404);
 export const serverError = (message = "Internal server error") =>
   jsonError(message, 500);
 
+export const tooManyRequests = (retryAfter: number) =>
+  NextResponse.json(
+    { error: "Too many requests. Please try again later." },
+    { status: 429, headers: { "Retry-After": String(retryAfter) } }
+  );
+
 /**
  * Returns the authenticated numeric user id, or null when there is no
  * valid session. Keeps the auth check identical across all API routes.

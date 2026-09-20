@@ -1,5 +1,3 @@
-import { NextResponse } from "next/server";
-
 interface Bucket {
   count: number;
   resetAt: number;
@@ -44,8 +42,7 @@ export const clientIp = (request: Request): string => {
   return request.headers.get("x-real-ip") ?? "unknown";
 };
 
-export const tooManyRequests = (retryAfter: number) =>
-  NextResponse.json(
-    { error: "Too many requests. Please try again later." },
-    { status: 429, headers: { "Retry-After": String(retryAfter) } }
-  );
+/** Test-only helper to reset the in-memory buckets. */
+export const resetRateLimits = () => {
+  buckets.clear();
+};
