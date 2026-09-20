@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "@/auth.config";
 import { bumpSessionVersion, getSessionVersion, verifyCredentials } from "@/lib/credentials";
+import { logSecurityEvent } from "@/lib/securityEvents";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -43,6 +44,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         (message as { session?: { userId?: string } }).session?.userId;
       if (sub) {
         await bumpSessionVersion(Number(sub));
+        await logSecurityEvent({ type: 'logout', userId: Number(sub) });
       }
     },
   },
@@ -53,8 +55,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials: Partial<Record<"email" | "password", unknown>>) {
-        const user = await verifyCredentials(credentials?.email, credentials?.password);
+      async authorize(
+        credentials: Partial<Record<"email" | "password", unknown>>,
+        request: Request
+      ) {
+        const user = await verifyCredentials(credentials?.email, credentials?.password, request);
         if (!user) {
           return null;
         }

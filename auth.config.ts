@@ -26,8 +26,15 @@ export const authConfig = {
                 return Response.redirect(new URL("/", nextUrl));
             }
 
-            // Allow public paths or require login
-            return isPublicPath || isLoggedIn;
+            // The admin area has its own isolated auth; let it through here.
+            const adminSlug = (process.env.ADMIN_PATH ?? "").trim().replace(/^\/+|\/+$/g, "");
+            const adminRoot = adminSlug ? "/" + adminSlug : null;
+            const isAdminPath =
+                adminRoot !== null &&
+                (nextUrl.pathname === adminRoot || nextUrl.pathname.startsWith(adminRoot + "/"));
+
+            // Allow public paths, the admin area, or require login
+            return isAdminPath || isPublicPath || isLoggedIn;
         },
         async session({ session, token }) {
             if (token && session.user) {

@@ -1,7 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { ILike } from 'typeorm';
 import { getUserRepository } from '@/lib/typeorm';
-import { rateLimit } from '@/lib/rateLimit';
+import { clientIp, rateLimit } from '@/lib/rateLimit';
+import { logSecurityEvent } from '@/lib/securityEvents';
 import { normalizeEmail } from '@/lib/validation';
 
 export const LOGIN_LIMIT = 10;
@@ -24,10 +25,12 @@ export interface AuthenticatedUser {
  */
 export const verifyCredentials = async (
   rawEmail: unknown,
-  rawPassword: unknown
+  rawPassword: unknown,
+  request?: Request
 ): Promise<AuthenticatedUser | null> => {
   const email = normalizeEmail(rawEmail);
   const password = typeof rawPassword === 'string' ? rawPassword : '';
+  const ip = request ? clientIp(request) : null;
 
   if (!email || !password) {
     return null;
@@ -36,6 +39,7 @@ export const verifyCredentials = async (
   const limit = rateLimit('login:' + email, LOGIN_LIMIT, LOGIN_WINDOW_MS);
   if (!limit.ok) {
     console.warn('Login rate limit hit for ' + email);
+    await logSecurityEvent({ type: 'login_fail', email, ip, detail: { reason: 'rate_limited' } });
     return null;
   }
 
@@ -46,13 +50,23 @@ export const verifyCredentials = async (
     if (!user) {
       // Constant-time mitigation for user enumeration via response timing.
       await bcrypt.compare(password, DUMMY_PASSWORD_HASH).catch(() => undefined);
+      await logSecurityEvent({ type: 'login_fail', email, ip, detail: { reason: 'unknown_user' } });
       return null;
     }
 
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
+      await logSecurityEvent({
+        type: 'login_fail',
+        userId: user.id,
+        email: user.email,
+        ip,
+        detail: { reason: 'bad_password' },
+      });
       return null;
     }
+
+    await logSecurityEvent({ type: 'login_ok', userId: user.id, email: user.email, ip });
 
     return {
       id: user.id,
