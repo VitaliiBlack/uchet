@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: uchet-local-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: uchet
+      POSTGRES_PASSWORD: uchet_local_dev
+      POSTGRES_DB: uchet
+    ports:
+      # Host 55432 -> container 5432 (5432 is taken by Docker, 5433 by local Homebrew PG)
+      - "55432:5432"
+    volumes:
+      - uchet_pgdata:/var/lib/postgresql/data
+      - ./docker/initdb/00-base-schema.sql:/docker-entrypoint-initdb.d/00-base-schema.sql:ro
+      - ./migrations/20260706_add_workspaces.sql:/docker-entrypoint-initdb.d/20-add-workspaces.sql:ro
+      - ./migrations/20260706_add_workspace_members.sql:/docker-entrypoint-initdb.d/21-add-workspace-members.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U uchet -d uchet"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  uchet_pgdata:

@@ -64,11 +64,11 @@ yarn dev
 Критичные правила:
 
 - не выполнять ручные schema/data changes без отдельного утверждённого плана;
-- не использовать `lib/initDb.ts` как миграционный инструмент;
-- не запускать `initDb` против production базы.
+- schema-изменения только через файлы в `migrations/`;
+- не запускать ad-hoc schema/init-скрипты против production базы.
 
-`lib/initDb.ts` оставлен только как безопасный additive bootstrap для локального/dev-окружения.  
-Он не должен использоваться вместо нормальных миграций.
+Схема поднимается из `migrations/` (и dev-bootstrap в `docker/initdb/`).  
+Никогда не запускайте локальные bootstrap/migration-скрипты против production.
 
 ## Проверки перед релизом
 

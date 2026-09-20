@@ -7,7 +7,7 @@
 Перед любым релизом:
 
 - не выполнять destructive SQL;
-- не запускать `lib/initDb.ts` против production;
+- не запускать ad-hoc schema/init-скрипты против production;
 - не делать schema/data changes без отдельного утверждённого плана;
 - не хранить реальные секреты в репозитории.
 
