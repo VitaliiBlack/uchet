@@ -4,6 +4,7 @@ export interface UserEntity {
   id: number;
   email: string;
   password: string;
+  sessionVersion: number;
 }
 
 export const UserEntitySchema = new EntitySchema<UserEntity>({
@@ -21,6 +22,11 @@ export const UserEntitySchema = new EntitySchema<UserEntity>({
     },
     password: {
       type: String,
+    },
+    sessionVersion: {
+      type: Number,
+      name: "session_version",
+      default: 0,
     },
   },
 });

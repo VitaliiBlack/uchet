@@ -15,6 +15,7 @@ services:
       - ./docker/initdb/00-base-schema.sql:/docker-entrypoint-initdb.d/00-base-schema.sql:ro
       - ./migrations/20260706_add_workspaces.sql:/docker-entrypoint-initdb.d/20-add-workspaces.sql:ro
       - ./migrations/20260706_add_workspace_members.sql:/docker-entrypoint-initdb.d/21-add-workspace-members.sql:ro
+      - ./migrations/20260920_add_session_version.sql:/docker-entrypoint-initdb.d/22-add-session-version.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U uchet -d uchet"]
       interval: 5s

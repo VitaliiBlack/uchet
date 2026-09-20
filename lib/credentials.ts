@@ -10,6 +10,7 @@ export const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 export interface AuthenticatedUser {
   id: number;
   email: string;
+  sessionVersion: number;
 }
 
 /**
@@ -28,7 +29,6 @@ export const verifyCredentials = async (
     return null;
   }
 
-  // Per-account brute-force throttle (best-effort, in-memory).
   const limit = rateLimit('login:' + email, LOGIN_LIMIT, LOGIN_WINDOW_MS);
   if (!limit.ok) {
     console.warn('Login rate limit hit for ' + email);
@@ -48,9 +48,34 @@ export const verifyCredentials = async (
       return null;
     }
 
-    return { id: user.id, email: user.email };
+    return {
+      id: user.id,
+      email: user.email,
+      sessionVersion: user.sessionVersion ?? 0,
+    };
   } catch (error) {
     console.error('Auth error:', error);
     return null;
   }
+};
+
+/** Current session version for a user, or null when the user no longer exists. */
+export const getSessionVersion = async (userId: number): Promise<number | null> => {
+  const userRepository = await getUserRepository();
+  const user = await userRepository.findOne({
+    where: { id: userId },
+    select: { id: true, sessionVersion: true },
+  });
+
+  return user ? user.sessionVersion ?? 0 : null;
+};
+
+/** Invalidates every existing token for the user (used on logout). */
+export const bumpSessionVersion = async (userId: number): Promise<void> => {
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return;
+  }
+
+  const userRepository = await getUserRepository();
+  await userRepository.increment({ id: userId }, 'sessionVersion', 1);
 };

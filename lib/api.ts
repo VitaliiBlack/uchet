@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { getSessionVersion } from "@/lib/credentials";
 
 export const jsonError = (error: string, status: number) =>
   NextResponse.json({ error }, { status });
@@ -28,5 +29,20 @@ export const getSessionUserId = async (): Promise<number | null> => {
   }
 
   const userId = Number(raw);
-  return Number.isInteger(userId) && userId > 0 ? userId : null;
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return null;
+  }
+
+  // Reject tokens issued before the latest session version (logout revocation).
+  const currentVersion = await getSessionVersion(userId);
+  if (currentVersion === null) {
+    return null;
+  }
+
+  const tokenVersion = session?.sessionVersion;
+  if (typeof tokenVersion !== "number" || tokenVersion !== currentVersion) {
+    return null;
+  }
+
+  return userId;
 };

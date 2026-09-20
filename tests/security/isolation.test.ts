@@ -27,9 +27,9 @@ import { POST as register } from '@/app/api/auth/register/route';
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const authMock = vi.mocked(auth);
 
-const signInAs = (id: number | null) =>
+const signInAs = (id: number | null, version = 0) =>
   authMock.mockResolvedValue(
-    (id === null ? null : { user: { id: String(id) } }) as never
+    (id === null ? null : { user: { id: String(id) }, sessionVersion: version }) as never
   );
 
 const jsonReq = (url: string, method: string, body?: unknown) =>

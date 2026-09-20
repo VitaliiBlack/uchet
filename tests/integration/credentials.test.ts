@@ -31,6 +31,7 @@ describe('verifyCredentials (integration: real DB + bcrypt)', () => {
     await expect(verifyCredentials('user@test.dev', PASSWORD)).resolves.toEqual({
       id: 1,
       email: 'user@test.dev',
+      sessionVersion: 0,
     });
   });
 
