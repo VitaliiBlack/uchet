@@ -7,6 +7,10 @@ import { normalizeEmail } from '@/lib/validation';
 export const LOGIN_LIMIT = 10;
 export const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 
+// Pre-computed bcrypt hash (cost 10) compared against when the email does not
+// exist, so login timing does not reveal whether an account is registered.
+const DUMMY_PASSWORD_HASH = '$2b$10$L93hoAEkpcaBPDKnDBRJn.OxUDUiHimvPLMzJ8XXX.s9DvOfSNtWS';
+
 export interface AuthenticatedUser {
   id: number;
   email: string;
@@ -40,6 +44,8 @@ export const verifyCredentials = async (
     const user = await userRepository.findOne({ where: { email: ILike(email) } });
 
     if (!user) {
+      // Constant-time mitigation for user enumeration via response timing.
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH).catch(() => undefined);
       return null;
     }
 
