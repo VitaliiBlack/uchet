@@ -183,15 +183,14 @@ export const useOperations = (date: string, workspaceId: number | null) => {
     }, [date, hydratedOperations, setScopedLocalOperations]);
 
     const saveOperationByLocalId = useCallback((localId: string) => {
-        setScopedLocalOperations((prev) => {
-            const currentOps = prev ?? hydratedOperations;
-            const op = currentOps.find((item) => item.localId === localId);
-            if (op) {
-                void saveOperation(op);
-            }
-            return currentOps;
-        });
-    }, [hydratedOperations, saveOperation, setScopedLocalOperations]);
+        // Read outside the state updater: an updater must stay pure, otherwise
+        // React StrictMode (dev) double-invokes it and we POST twice.
+        const currentOps = localOperations ?? hydratedOperations;
+        const op = currentOps.find((item) => item.localId === localId);
+        if (op) {
+            void saveOperation(op);
+        }
+    }, [localOperations, hydratedOperations, saveOperation]);
 
     const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>, localId: string, rowIndex: number) => {
         const relatedTarget = e.relatedTarget as HTMLElement | null;
