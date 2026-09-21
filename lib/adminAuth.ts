@@ -274,8 +274,8 @@ export const adminNeedsPasswordChange = async (adminId: number): Promise<boolean
 export type ChangeCredentialsResult = { ok: true } | { ok: false; error: string };
 
 /**
- * Changes the admin login (email) and password. Requires the current password,
- * forbids keeping the old email/password, and clears the forced-change flag.
+ * Changes the admin password (and optionally the login). Requires the current
+ * password, forbids reusing it, and clears the forced-change flag.
  */
 export const changeAdminCredentials = async (
   adminId: number,
@@ -306,10 +306,7 @@ export const changeAdminCredentials = async (
   if (!newEmail || !isValidEmail(newEmail)) {
     return { ok: false, error: 'Некорректный email' };
   }
-  if (newEmail === String(admin.email).toLowerCase()) {
-    return { ok: false, error: 'Новый логин должен отличаться от текущего' };
-  }
-
+  // The login may stay the same — only the password is forced to change.
   const taken = await dataSource.query(
     'SELECT id FROM admin_users WHERE lower(email) = $1 AND id <> $2 LIMIT 1',
     [newEmail, adminId]

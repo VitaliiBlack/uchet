@@ -43,7 +43,8 @@ export default function ChangePasswordForm({ slug }: { slug: string }) {
       >
         <h1 className="text-xl font-semibold">Смена учётных данных админа</h1>
         <p className="text-sm text-slate-400">
-          Замените стартовый логин и пароль на свои. Логин и пароль должны отличаться от текущих.
+          Задайте свой пароль (мин. 12 символов, не тот же, что сейчас). Логин можно оставить
+          как есть или указать новый.
         </p>
 
         <label className="block text-sm">
@@ -59,7 +60,7 @@ export default function ChangePasswordForm({ slug }: { slug: string }) {
         </label>
 
         <label className="block text-sm">
-          <span className="mb-1 block text-slate-300">Новый логин (email)</span>
+          <span className="mb-1 block text-slate-300">Логин (email) — можно оставить текущий</span>
           <input
             type="email"
             required
