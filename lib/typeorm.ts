@@ -12,6 +12,7 @@ import {
   WorkspaceEntitySchema,
   type WorkspaceEntity,
 } from "@/lib/entities/WorkspaceEntity";
+import { resolveDatabaseUrl } from "@/lib/dbUrl";
 
 declare global {
   var __uchetDataSource__: Promise<DataSource> | undefined;
@@ -20,7 +21,7 @@ declare global {
 const createDataSource = async () => {
   const dataSource = new DataSource({
     type: "postgres",
-    url: process.env.DATABASE_URL,
+    url: resolveDatabaseUrl(),
     synchronize: false,
     migrationsRun: false,
     logging: false,
