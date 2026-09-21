@@ -16,6 +16,8 @@ export interface AuthenticatedUser {
   id: number;
   email: string;
   sessionVersion: number;
+  mustChangePassword: boolean;
+  tempPasswordSetAt: string | null;
 }
 
 /**
@@ -72,6 +74,10 @@ export const verifyCredentials = async (
       id: user.id,
       email: user.email,
       sessionVersion: user.sessionVersion ?? 0,
+      mustChangePassword: Boolean(user.mustChangePassword),
+      tempPasswordSetAt: user.tempPasswordSetAt
+        ? new Date(user.tempPasswordSetAt).toISOString()
+        : null,
     };
   } catch (error) {
     console.error('Auth error:', error);
@@ -79,15 +85,42 @@ export const verifyCredentials = async (
   }
 };
 
-/** Current session version for a user, or null when the user no longer exists. */
-export const getSessionVersion = async (userId: number): Promise<number | null> => {
+export interface UserAuthState {
+  sessionVersion: number;
+  mustChangePassword: boolean;
+  tempPasswordSetAt: string | null;
+}
+
+/** Current auth state (version + temp-password flags), or null if the user is gone. */
+export const getUserAuthState = async (userId: number): Promise<UserAuthState | null> => {
   const userRepository = await getUserRepository();
   const user = await userRepository.findOne({
     where: { id: userId },
-    select: { id: true, sessionVersion: true },
+    select: {
+      id: true,
+      sessionVersion: true,
+      mustChangePassword: true,
+      tempPasswordSetAt: true,
+    },
   });
 
-  return user ? user.sessionVersion ?? 0 : null;
+  if (!user) {
+    return null;
+  }
+
+  return {
+    sessionVersion: user.sessionVersion ?? 0,
+    mustChangePassword: Boolean(user.mustChangePassword),
+    tempPasswordSetAt: user.tempPasswordSetAt
+      ? new Date(user.tempPasswordSetAt).toISOString()
+      : null,
+  };
+};
+
+/** Current session version for a user, or null when the user no longer exists. */
+export const getSessionVersion = async (userId: number): Promise<number | null> => {
+  const state = await getUserAuthState(userId);
+  return state ? state.sessionVersion : null;
 };
 
 /** Invalidates every existing token for the user (used on logout). */

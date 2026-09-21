@@ -5,6 +5,8 @@ export interface UserEntity {
   email: string;
   password: string;
   sessionVersion: number;
+  mustChangePassword: boolean;
+  tempPasswordSetAt: Date | null;
 }
 
 export const UserEntitySchema = new EntitySchema<UserEntity>({
@@ -27,6 +29,16 @@ export const UserEntitySchema = new EntitySchema<UserEntity>({
       type: Number,
       name: "session_version",
       default: 0,
+    },
+    mustChangePassword: {
+      type: Boolean,
+      name: "must_change_password",
+      default: false,
+    },
+    tempPasswordSetAt: {
+      type: "timestamptz",
+      name: "temp_password_set_at",
+      nullable: true,
     },
   },
 });

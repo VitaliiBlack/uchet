@@ -1,7 +1,8 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "@/auth.config";
-import { bumpSessionVersion, getSessionVersion, verifyCredentials } from "@/lib/credentials";
+import { bumpSessionVersion, getUserAuthState, verifyCredentials } from "@/lib/credentials";
+import { mustChangeBy } from "@/lib/passwordPolicy";
 import { logSecurityEvent } from "@/lib/securityEvents";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -10,14 +11,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     ...authConfig.callbacks,
     async jwt({ token, user }) {
       if (user) {
-        const version = (user as { sessionVersion?: number }).sessionVersion;
-        token.sessionVersion = typeof version === "number" ? version : undefined;
+        const first = user as {
+          sessionVersion?: number;
+          mustChangePassword?: boolean;
+          tempPasswordSetAt?: string | null;
+        };
+        token.sessionVersion =
+          typeof first.sessionVersion === "number" ? first.sessionVersion : undefined;
+        token.mustChangePassword = Boolean(first.mustChangePassword);
+        token.tempPasswordSetAt = first.tempPasswordSetAt ?? null;
       }
 
-      // Revocation check: reject tokens issued before the current session version.
+      // Revocation check plus fresh temp-password state from the database.
       if (token.sub && typeof token.sessionVersion === "number") {
-        const current = await getSessionVersion(Number(token.sub));
-        token.revoked = current === null || current !== token.sessionVersion;
+        const state = await getUserAuthState(Number(token.sub));
+        if (!state) {
+          token.revoked = true;
+        } else {
+          token.revoked = state.sessionVersion !== token.sessionVersion;
+          token.mustChangePassword = state.mustChangePassword;
+          token.tempPasswordSetAt = state.tempPasswordSetAt;
+        }
       }
 
       return token;
@@ -32,6 +46,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.id = token.sub as string;
         session.sessionVersion =
           typeof token.sessionVersion === "number" ? token.sessionVersion : undefined;
+        const tempSetAt =
+          typeof token.tempPasswordSetAt === "string" ? token.tempPasswordSetAt : null;
+        session.user.mustChangePassword = Boolean(token.mustChangePassword);
+        session.mustChangeBy = token.mustChangePassword ? mustChangeBy(tempSetAt) : null;
       }
       return session;
     },
@@ -69,6 +87,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.email.split('@')[0],
           email: user.email,
           sessionVersion: user.sessionVersion,
+          mustChangePassword: user.mustChangePassword,
+          tempPasswordSetAt: user.tempPasswordSetAt,
         };
       },
     }),

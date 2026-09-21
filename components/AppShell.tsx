@@ -5,6 +5,7 @@ import type { Session } from "next-auth";
 import { usePathname } from "next/navigation";
 import QueryProvider from "@/components/QueryProvider";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import ForcePasswordChangeModal from "@/components/ForcePasswordChangeModal";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ export default function AppShell({ children, session }: AppShellProps) {
     <SessionProvider session={session}>
       <QueryProvider>
         <ServiceWorkerRegistration />
+        {isCalendarPage && <ForcePasswordChangeModal />}
         <main
           className={
             isLoginPage

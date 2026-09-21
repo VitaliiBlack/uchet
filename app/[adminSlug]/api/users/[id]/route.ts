@@ -51,9 +51,15 @@ export async function POST(
       );
     }
     const hash = await bcrypt.hash(password, 10);
-    // Bump session_version so every existing session of this user is revoked.
+    // Revoke existing sessions and flag the password as temporary, so the app
+    // asks the user to pick their own (with a grace period).
     await dataSource.query(
-      'UPDATE users SET password = $1, session_version = session_version + 1 WHERE id = $2',
+      `UPDATE users
+          SET password = $1,
+              session_version = session_version + 1,
+              must_change_password = true,
+              temp_password_set_at = now()
+        WHERE id = $2`,
       [hash, userId]
     );
     await logSecurityEvent({

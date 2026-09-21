@@ -32,6 +32,8 @@ describe('verifyCredentials (integration: real DB + bcrypt)', () => {
       id: 1,
       email: 'user@test.dev',
       sessionVersion: 0,
+      mustChangePassword: false,
+      tempPasswordSetAt: null,
     });
   });
 

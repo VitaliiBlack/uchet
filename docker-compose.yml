@@ -19,6 +19,7 @@ services:
       - ./migrations/20260921_add_member_status.sql:/docker-entrypoint-initdb.d/23-add-member-status.sql:ro
       - ./migrations/20260922_add_admin.sql:/docker-entrypoint-initdb.d/24-add-admin.sql:ro
       - ./migrations/20260923_admin_must_change_password.sql:/docker-entrypoint-initdb.d/25-admin-must-change-password.sql:ro
+      - ./migrations/20260924_user_password_change.sql:/docker-entrypoint-initdb.d/26-user-password-change.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U uchet -d uchet"]
       interval: 5s
