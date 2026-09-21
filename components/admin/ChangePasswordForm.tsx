@@ -63,9 +63,9 @@ export default function ChangePasswordForm({ slug }: { slug: string }) {
           <span className="mb-1 block text-slate-300">Логин (email) — можно оставить текущий</span>
           <input
             type="email"
-            required
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="оставьте пустым, чтобы не менять"
             autoComplete="username"
             className={field}
           />

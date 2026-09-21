@@ -300,19 +300,23 @@ export const changeAdminCredentials = async (
     return { ok: false, error: 'Неверный текущий пароль' };
   }
 
-  const newEmail = normalizeEmail(newEmailRaw);
+  const requestedEmail = normalizeEmail(newEmailRaw);
   const newPassword = typeof newPasswordRaw === 'string' ? newPasswordRaw : '';
+  // An empty login keeps the current one; only the password is forced to change.
+  const newEmail = requestedEmail || String(admin.email).toLowerCase();
 
-  if (!newEmail || !isValidEmail(newEmail)) {
+  if (!isValidEmail(newEmail)) {
     return { ok: false, error: 'Некорректный email' };
   }
-  // The login may stay the same — only the password is forced to change.
-  const taken = await dataSource.query(
-    'SELECT id FROM admin_users WHERE lower(email) = $1 AND id <> $2 LIMIT 1',
-    [newEmail, adminId]
-  );
-  if (taken[0]) {
-    return { ok: false, error: 'Этот email уже занят' };
+
+  if (newEmail !== String(admin.email).toLowerCase()) {
+    const taken = await dataSource.query(
+      'SELECT id FROM admin_users WHERE lower(email) = $1 AND id <> $2 LIMIT 1',
+      [newEmail, adminId]
+    );
+    if (taken[0]) {
+      return { ok: false, error: 'Этот email уже занят' };
+    }
   }
 
   if (newPassword.length < MIN_ADMIN_PASSWORD_LENGTH) {
