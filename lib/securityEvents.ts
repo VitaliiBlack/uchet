@@ -12,7 +12,8 @@ export type SecurityEventType =
   | 'admin_logout'
   | 'admin_action'
   | 'admin_dump'
-  | 'admin_snapshot';
+  | 'admin_snapshot'
+  | 'password_reset_request';
 
 export interface SecurityEventInput {
   type: SecurityEventType;

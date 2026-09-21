@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { getDataSource } from '@/lib/typeorm';
 import { clientIp, rateLimit } from '@/lib/rateLimit';
-import { normalizeEmail } from '@/lib/validation';
+import { isValidEmail, normalizeEmail } from '@/lib/validation';
 
 export const ADMIN_COOKIE = 'uchet_admin';
 const DEFAULT_TTL_HOURS = 8;
@@ -188,8 +188,10 @@ export const buildClearAdminCookie = (): string => {
 };
 
 export type AdminLoginResult =
-  | { ok: true; admin: { id: number; email: string } }
+  | { ok: true; admin: { id: number; email: string; mustChangePassword: boolean } }
   | { ok: false; reason: 'invalid' | 'disabled' | 'locked' | 'rate_limited' | 'ip_blocked' };
+
+export const MIN_ADMIN_PASSWORD_LENGTH = 12;
 
 export const verifyAdminCredentials = async (
   request: Request,
@@ -213,7 +215,7 @@ export const verifyAdminCredentials = async (
 
   const dataSource = await getDataSource();
   const rows = await dataSource.query(
-    'SELECT id, email, password_hash, is_active, locked_until FROM admin_users WHERE lower(email) = $1 LIMIT 1',
+    'SELECT id, email, password_hash, is_active, locked_until, must_change_password FROM admin_users WHERE lower(email) = $1 LIMIT 1',
     [email]
   );
   const admin = rows[0];
@@ -245,7 +247,93 @@ export const verifyAdminCredentials = async (
     'UPDATE admin_users SET failed_attempts = 0, locked_until = NULL, last_login_at = now() WHERE id = $1',
     [admin.id]
   );
-  return { ok: true, admin: { id: Number(admin.id), email: String(admin.email) } };
+  return {
+    ok: true,
+    admin: {
+      id: Number(admin.id),
+      email: String(admin.email),
+      mustChangePassword: Boolean(admin.must_change_password),
+    },
+  };
+};
+
+/** True while the bootstrap admin still uses the placeholder credentials. */
+export const adminNeedsPasswordChange = async (adminId: number): Promise<boolean> => {
+  try {
+    const dataSource = await getDataSource();
+    const rows = await dataSource.query(
+      'SELECT must_change_password FROM admin_users WHERE id = $1 LIMIT 1',
+      [adminId]
+    );
+    return Boolean(rows[0]?.must_change_password);
+  } catch {
+    return false;
+  }
+};
+
+export type ChangeCredentialsResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Changes the admin login (email) and password. Requires the current password,
+ * forbids keeping the old email/password, and clears the forced-change flag.
+ */
+export const changeAdminCredentials = async (
+  adminId: number,
+  currentPassword: string,
+  newEmailRaw: unknown,
+  newPasswordRaw: unknown
+): Promise<ChangeCredentialsResult> => {
+  const dataSource = await getDataSource();
+  const rows = await dataSource.query(
+    'SELECT id, email, password_hash FROM admin_users WHERE id = $1 LIMIT 1',
+    [adminId]
+  );
+  const admin = rows[0];
+  if (!admin) {
+    return { ok: false, error: 'Администратор не найден' };
+  }
+
+  const currentOk = admin.password_hash
+    ? await bcrypt.compare(currentPassword, admin.password_hash)
+    : false;
+  if (!currentOk) {
+    return { ok: false, error: 'Неверный текущий пароль' };
+  }
+
+  const newEmail = normalizeEmail(newEmailRaw);
+  const newPassword = typeof newPasswordRaw === 'string' ? newPasswordRaw : '';
+
+  if (!newEmail || !isValidEmail(newEmail)) {
+    return { ok: false, error: 'Некорректный email' };
+  }
+  if (newEmail === String(admin.email).toLowerCase()) {
+    return { ok: false, error: 'Новый логин должен отличаться от текущего' };
+  }
+
+  const taken = await dataSource.query(
+    'SELECT id FROM admin_users WHERE lower(email) = $1 AND id <> $2 LIMIT 1',
+    [newEmail, adminId]
+  );
+  if (taken[0]) {
+    return { ok: false, error: 'Этот email уже занят' };
+  }
+
+  if (newPassword.length < MIN_ADMIN_PASSWORD_LENGTH) {
+    return {
+      ok: false,
+      error: 'Пароль должен быть не короче ' + MIN_ADMIN_PASSWORD_LENGTH + ' символов',
+    };
+  }
+  if (admin.password_hash && (await bcrypt.compare(newPassword, admin.password_hash))) {
+    return { ok: false, error: 'Новый пароль должен отличаться от текущего' };
+  }
+
+  const hash = await bcrypt.hash(newPassword, 10);
+  await dataSource.query(
+    'UPDATE admin_users SET email = $1, password_hash = $2, must_change_password = false WHERE id = $3',
+    [newEmail, hash, adminId]
+  );
+  return { ok: true };
 };
 
 export const adminUnauthorized = () =>

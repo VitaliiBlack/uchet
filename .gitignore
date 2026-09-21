@@ -45,3 +45,9 @@ next-env.d.ts
 
 # stray local files that must never be committed
 cookies.txt
+
+# local-only tooling: tests and pentest scripts (not part of the app runtime)
+/tests/
+/pentest/
+/vitest.config.mts
+/playwright.config.ts

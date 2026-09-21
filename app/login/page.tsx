@@ -21,6 +21,9 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotStatus, setForgotStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const router = useRouter();
   const { status } = useSession();
 
@@ -88,6 +91,21 @@ export default function LoginPage() {
       setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotStatus("sending");
+    try {
+      await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail || email }),
+      });
+      setForgotStatus("sent");
+    } catch {
+      setForgotStatus("error");
     }
   };
 
@@ -232,6 +250,23 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {/* Forgot password */}
+          {isLogin && (
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgot(true);
+                  setForgotEmail(email);
+                  setForgotStatus("idle");
+                }}
+                className="text-sm text-gray-500 hover:text-gray-700 underline focus:outline-none"
+              >
+                Забыли пароль?
+              </button>
+            </div>
+          )}
+
           {/* Toggle Login/Register */}
           <div className="text-center text-sm text-gray-600">
             {isLogin ? "Нет аккаунта? " : "Уже есть аккаунт? "}
@@ -252,6 +287,51 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {showForgot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md space-y-4 rounded-3xl bg-white p-6 shadow-2xl">
+            <h3 className="text-xl font-bold text-gray-900">Восстановление пароля</h3>
+            {forgotStatus === "sent" ? (
+              <p className="text-sm text-gray-600">
+                Если такой email зарегистрирован, запрос отправлен администратору.
+                С вами свяжутся и выдадут новый пароль.
+              </p>
+            ) : (
+              <form onSubmit={handleForgot} className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Укажите email аккаунта — запрос уйдёт администратору на подтверждение.
+                </p>
+                <input
+                  type="email"
+                  required
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder="Введите email"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
+                />
+                {forgotStatus === "error" && (
+                  <p className="text-sm text-red-500">Не удалось отправить, попробуйте позже.</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={forgotStatus === "sending"}
+                  className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 py-3 font-semibold text-white disabled:opacity-50"
+                >
+                  {forgotStatus === "sending" ? "Отправка..." : "Отправить запрос"}
+                </button>
+              </form>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowForgot(false)}
+              className="w-full rounded-xl border border-gray-300 py-2 text-sm text-gray-600 hover:bg-gray-50"
+            >
+              Закрыть
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

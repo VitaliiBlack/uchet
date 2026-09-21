@@ -34,8 +34,8 @@ const pool = new pg.Pool({ connectionString: url });
 try {
   const hash = await bcrypt.hash(password, 10);
   const result = await pool.query(
-    `INSERT INTO admin_users (email, password_hash)
-       VALUES ($1, $2)
+    `INSERT INTO admin_users (email, password_hash, must_change_password)
+       VALUES ($1, $2, true)
        ON CONFLICT (email) DO UPDATE
          SET password_hash = EXCLUDED.password_hash,
              is_active = true,
